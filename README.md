@@ -55,6 +55,8 @@ CHANGELOG.md          release notes for devkit
   drawbacks, profiles and features, Next.js configuration review, security posture, corrections.
 - [Usage](docs/usage.md): creating projects, local template development, upgrading, tests.
 - [Publishing](docs/publishing.md): the exact steps to release both repositories.
+- [CI test evidence](docs/ci-evidence.md): the JUnit XML, console record and metadata every CI run uploads,
+  and how to retrieve and read them.
 - [Next-session handoff](docs/NEXT_SESSION.md): current state, versions, branches, unresolved decisions and the
   release sequence.
 - [Feature composition](docs/feature-composition.md): how optional features are represented, enforced,

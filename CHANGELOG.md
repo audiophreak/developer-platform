@@ -2,6 +2,13 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## Unreleased
+
+- CI now uploads downloadable test evidence for every run and Python version, including failed runs:
+  JUnit XML, the console record, run metadata tied to the commit under test, and installed package
+  versions (`docs/ci-evidence.md`). The exit code is unchanged; a token-shaped-string scan blocks the
+  upload of anything suspicious. No release is implied by this change.
+
 ## 0.3.0
 
 - **`devkit upgrade PROJECT`** (`--dry-run`, `--to`, `--set`): upgrades an existing project to the newest
