@@ -4,6 +4,14 @@ Written at the end of the Zod / feature-composition / release-hardening session.
 It contains local paths on purpose (it is a handoff for the owner); generalise or remove them before
 this repository is ever made public. It contains no credentials.
 
+**Status update for the v0.3.0 release.** Template `v0.2.0` is published (annotated tag at merge commit
+`f78f009`, CI green on Python 3.12 and 3.14). Platform pull request #1 is the `v0.3.0` release: version
+metadata bumped to 0.3.0, `uv.lock` updated for the version only, and the 0.2.0 contract snapshot
+re-captured from the `v0.2.0` tag (it differed from the provisional one only in `captured_from`). The
+annotated tag `v0.3.0` is created on that pull request's merge commit after CI passes on `main`.
+Sections 2, 3, 7 and 8 below record the checkpoint that preceded the release and are kept as history;
+the current state is in the repositories' tags and `CHANGELOG.md`.
+
 ## 1. Where everything is
 
 | What | Location | Notes |

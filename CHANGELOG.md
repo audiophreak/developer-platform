@@ -2,7 +2,7 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
-## 0.3.0 (unreleased)
+## 0.3.0
 
 - **`devkit upgrade PROJECT`** (`--dry-run`, `--to`, `--set`): upgrades an existing project to the newest
   template release this devkit supports. It requires a git root with nothing uncommitted, keeps recorded
@@ -23,12 +23,8 @@ devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template ver
   a "Destructive commands" section in `AGENTS.md`.
 - Validation: `--to` and option arguments are checked before the project is inspected.
 - Documentation: feature-composition decision record, full-stack roadmap, release and upgrade strategy.
-- **Provisional:** `tests/contracts/web-core/0.2.0.json` was captured from the *unreleased* template working
-  tree (its `captured_from` field says so). It must be re-captured from the `v0.2.0` release tag with
-  `tools/capture_contract.py --ref v0.2.0 --write` before 0.3.0 is released; it was not generated from
-  a tag because that tag does not exist yet.
-- Not yet released: published versions are devkit 0.2.0 and template 0.1.0; `pyproject.toml` and
-  `src/devkit/__init__.py` still say 0.2.0 and are bumped at release time.
+- Contract snapshots exist for template 0.1.0 and 0.2.0, both captured from their release tags
+  (`tools/capture_contract.py`). Requires template v0.2.0 for the `zod` option; template v0.1.x remains supported.
 
 ## 0.2.0
 

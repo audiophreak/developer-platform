@@ -4,6 +4,10 @@ Releases: **`web-core-template` v0.1.0** and **`developer-platform` v0.2.0** (th
 supports template releases `>=0.1.0,<0.2.0`). **Both repositories are private.** The template is
 published first, because the platform's default mode builds from the published template.
 
+> This document describes the **first** release (it includes creating the repositories). For later
+> releases follow `release-strategy.md`, section 7, and the template's `docs/maintaining.md`; the
+> private-repository access notes below still apply.
+
 Each repository is published the same way, and a tag is only created after CI is green on the
 pushed commit, so a tag never points at an unverified commit. Replace `/path/to/...` with your
 checkouts.
