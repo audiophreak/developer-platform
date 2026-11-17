@@ -7,6 +7,9 @@ dist/
 build/
 *.egg-info/
 
+# CI evidence written by the test step (uploaded as an artifact, never committed)
+reports/
+
 # macOS
 .DS_Store
 
