@@ -36,15 +36,27 @@ Each available profile carries a `TemplateSpec`:
 | Field        | Meaning                                                                         |
 | ------------ | ------------------------------------------------------------------------------- |
 | `url`        | The published origin. Recorded verbatim in generated projects (portable).       |
-| `versions`   | Half-open range of template releases this devkit supports, e.g. `>=0.1.0,<0.2.0`. |
+| `versions`   | Half-open range of template releases this devkit supports, e.g. `>=0.1.0,<0.3.0`. |
 | `node_major` | Node.js major those releases pin; `doctor` checks it.                           |
-| `options`    | Template questions `--set NAME=VALUE` may set, with their type.                 |
+| `options`    | Template questions `--set NAME=VALUE` may set: type, default and `since` (the first release that has it). |
 
-The template must accept `app_name` and `app_description` (always sent) and every declared option.
-A template release that breaks any of this (new Node major, renamed question) must bump its minor
-version, and the platform widens or moves the range in the same change. Plain
-`copier update` ignores the range (it takes the newest tag), so upgrade documentation always pins
-`--vcs-ref`; a test records that behaviour.
+The template must accept `app_name` and `app_description` (always sent) and every declared option
+from its `since` release on. A template release that breaks any of this (new Node major, renamed
+question) must bump its minor version, and the platform widens or moves the range in the same
+change. The range may span several template lines: devkit 0.3.0 supports `>=0.1.0,<0.3.0`, and an
+option newer than the selected release (`zod` needs 0.2.0) is refused up front, because Copier
+silently ignores an answer for a question that does not exist. After a real generation `devkit`
+also verifies each requested option was recorded in the answers file.
+
+`devkit upgrade` applies the same range to existing projects. Plain `copier update` ignores it (it
+takes the newest tag), so direct use always pins `--vcs-ref`; a test records that behaviour.
+
+**Compatibility is tested offline.** `tests/contracts/web-core/<version>.json` snapshots each
+supported release's question contract (captured from the release tag by `tools/capture_contract.py`);
+`tests/test_contract_snapshots.py` checks the registry against every snapshot with no network or
+credentials, so CI covers it. The live check that a snapshot still equals the real template is the
+release gate (`pytest -m integration`, run where the template is checked out). Details and the
+alternatives considered: `release-strategy.md`, section 6.
 
 ### How a template is chosen (`src/devkit/sources.py`)
 
@@ -126,44 +138,24 @@ that Homebrew cannot pin per project. `doctor` reports mise as optional.
 
 Reserved profiles are rejected with an explicit message so later milestones do not change the CLI.
 
-**Composition across templates (unresolved).** Copier has no template inheritance. The promising
-approach, not yet prototyped, is layering: apply `web-core-template`, then a separate add-on
-template onto the same directory with its own answers file (Copier supports several answers files
-per project), each independently versioned and upgraded. The alternative, one template with a
-`profile` question and conditional files, keeps one version line but makes every profile change a
-release of everything. This needs a decision and a prototype before the full-stack milestone.
+**Optional features.** Within a profile, optional features are boolean Copier questions in the
+template (`zod` exists; the rest are planned). How they are represented, enforced, locked,
+recorded and upgraded is decided in `feature-composition.md`; the roadmap, dependency relationships
+and trust boundaries for the planned ones are in `full-stack-plan.md`.
 
-Planned optional features:
-
-| Feature           | Options                       | Requires                    | Allowed in             |
-| ----------------- | ----------------------------- | --------------------------- | ---------------------- |
-| `zod`             |                               |                             | all profiles           |
-| `forms`           |                               | `zod`                       | all profiles           |
-| `rest-api`        | versioned `/api/v1`           | `zod`                       | full-stack, native-ios |
-| `docker-services` | Compose services              |                             | full-stack, native-ios |
-| `database`        | `supabase` or `postgres`      | `zod`, `docker-services`    | full-stack, native-ios |
-| `auth`            | `supabase-auth` or `authjs`   | `database`, `zod`           | full-stack, native-ios |
-| `deployment`      | `none`, `vercel`, `container` |                             | all profiles           |
-
-`native-ios` implies `rest-api` and `auth`. Incompatible: `auth=supabase-auth` without
-`database=supabase`; `deployment=vercel` with `database=postgres` (local Postgres is unreachable
-from Vercel).
-
-**Enforcement.** Rules about answers belong with the template that owns the questions: Copier
-`when:` conditions and validators in that template's `copier.yml` reject invalid combinations for
-every caller, and that template's tests enumerate the combinations. The platform's profile
-registry declares which options exist and their types, so `--set` rejects unknown options before
-any network access, and the platform adds only cross-template rules (for example which layers a
-profile applies). Failures name the features involved and exit 2, nothing is written, and
-`--dry-run` shows the resolved plan.
+**Composition across templates (unresolved).** Copier has no template inheritance. A feature with
+its own toolchain or release cadence (native iOS) should be a separate add-on template applied to
+the same directory with its own answers file, each independently versioned. This is a hypothesis
+that needs a prototype before that increment (`feature-composition.md`, section 2).
 
 ## Dependency pins
 
-Generated projects use exact versions and a committed lockfile. Web Core ships a static, verified
-lockfile (`web-core-template/docs/maintaining.md` explains refreshing it). For profiles with
-features, versions will live in one catalogue and the lockfile will be generated at creation with
-`npm install --before=<two weeks ago>`, keeping the two-week release-age rule. Python dependencies
-in both repositories are exact-pinned with `uv.lock` and resolved with an `exclude-newer` cutoff.
+Generated projects use exact versions and a committed lockfile for **every supported
+configuration**: the template keeps one complete lockfile per distinct set of npm dependencies
+(`web-core-template/locks/`), generated from the base lock by a maintainer tool, verified by tests
+and selected at generation by a computed key. Nothing is resolved at generation
+(`feature-composition.md`, section 4; `web-core-template/docs/features.md`). Python dependencies in
+both repositories are exact-pinned with `uv.lock` and resolved with an `exclude-newer` cutoff.
 
 ## Next.js configuration review
 
@@ -215,4 +207,4 @@ docs:
 1. Published as two **private** repositories (`publishing.md`); revisit visibility if others need to
    use the platform.
 2. How profiles compose across templates (layering or one template).
-3. A `devkit upgrade` command that enforces the supported range (plain `copier update` does not).
+3. Whether to teach `devkit upgrade` to apply a chain of releases (today it goes to one target).

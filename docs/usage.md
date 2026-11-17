@@ -35,7 +35,7 @@ repositories"); `devkit` never handles credentials itself.
 | `NAME`                    | Becomes the directory and the app name. The template validates the format (Web Core: lowercase letters, digits and single hyphens, up to 64, starting with a letter). The CLI itself only requires a single safe path segment. |
 | `--description TEXT`      | One line. The template validates it and supplies its own default when omitted. |
 | `--output-dir DIR`        | Existing directory to create `NAME` in. Default: the current directory. |
-| `--set NAME=VALUE`        | A template option declared by the profile; repeatable. Web Core: `cache_components=true\|false` (Next.js Cache Components with Partial Prefetching, default `true`). Unknown options are rejected. |
+| `--set NAME=VALUE`        | A template option or optional feature declared by the profile; repeatable. Web Core: `zod=true\|false` (Zod schema validation, default `false`) and `cache_components=true\|false` (Next.js Cache Components with Partial Prefetching, default `true`). Only `true` and `false` are accepted; unknown options are rejected before anything is fetched, and an option the selected release lacks is refused. |
 | `--template-ref vX.Y.Z`   | Render a specific release instead of the newest supported one. Releases outside the supported range are refused. |
 | `--template PATH`         | **Development:** render a local template checkout as it is on disk (working tree included). See below. |
 | `--template URL`          | Use a different template origin, with the same release rules.        |
@@ -62,6 +62,25 @@ npm run check
 
 `devkit new` does not run git, npm or `gh`, and does not create a GitHub repository.
 
+## Optional features
+
+Features are chosen with `--set`; the choice is recorded in the project's `.copier-answers.yml` and
+kept across upgrades:
+
+```bash
+uv run devkit new my-app --set zod=true --dry-run      # preview: shows "Options: zod=true", writes nothing
+uv run devkit new my-app --set zod=true --output-dir ..
+```
+
+With `zod=true` the project gets the exact-pinned `zod` dependency, a shared schema module in
+`src/lib/schemas/` with tests for accepted and rejected input, matching documentation and a
+lockfile for exactly that dependency set. With it off (the default) the project is identical to
+one from template 0.1.0. A feature needs a template release that has it: `--set zod=true` with
+`--template-ref v0.1.0` is refused (Copier would otherwise ignore it silently). To switch a feature
+on in an existing project use `devkit upgrade PROJECT --set zod=true`. Booleans are strict in `devkit`
+and in the template: only `true`/`false` (and `yes`/`no`, `on`/`off` for raw Copier) are accepted.
+How features work: `feature-composition.md`; what is planned: `full-stack-plan.md`.
+
 ## Develop the template locally (no published repository needed)
 
 ```bash
@@ -76,35 +95,70 @@ template repository has its own end-to-end tests (`uv run pytest` there).
 
 ## Upgrade a project to a newer template release
 
-Upgrades are performed with Copier, from inside the project, and always pin the release:
-
 ```bash
-git status                         # must be clean; commit or stash first
-uv run --project /path/to/developer-platform copier update \
-    --vcs-ref v0.1.1 --defaults --skip-answered
-git diff                           # review; resolve any <<<<<<< inline conflict markers
-npm install                        # regenerate package-lock.json after dependency changes
-npm run check
-git add -A && git commit -m "chore: update project template to v0.1.1"
+uv run devkit upgrade ../my-app --dry-run     # the plan and Copier's preview; changes nothing
+uv run devkit upgrade ../my-app               # upgrade to the newest release this devkit supports
+uv run devkit upgrade ../my-app --to v0.2.0   # or to a specific supported release
+uv run devkit upgrade ../my-app --set zod=true   # change an option or feature while upgrading
 ```
 
-(`/path/to/developer-platform` is your checkout of this repository.) Choose a release inside the range your devkit supports (`>=0.1.0,<0.2.0` for Web Core at devkit
-0.2.0; also in `profiles.py`). Without `--vcs-ref`, Copier takes the newest tag, which may be a
-breaking release outside that range. The full guide, including conflict handling, is
-`web-core-template/docs/upgrading.md`.
+What it does, and refuses:
+
+- It reads the project's recorded template origin and release (`.copier-answers.yml`) and requires
+  the release to be a plain tag inside the range this devkit supports (`>=0.1.0,<0.3.0` for Web Core
+  at devkit 0.3.0). A project from an older or newer release, or from commits after a release,
+  is refused with an explanation.
+- The project must be the root of a git repository with **nothing uncommitted** (no modified and no
+  untracked files). Otherwise it refuses and changes nothing, so your work can never mix with the
+  upgrade and is always recoverable.
+- The target is the newest supported release newer than the installed one (`--to` to choose);
+  downgrades, unpublished releases and releases outside the range are refused. A project that is
+  already current is reported as such.
+- **Your feature selections are kept** (recorded answers are reused); features a newer release
+  introduces stay off unless you pass `--set`. An option the target release does not have is refused.
+- Copier merges the new release into your files. Your own changes are merged, never overwritten.
+  Where both sides changed the same lines, both are kept between `<<<<<<<` and `>>>>>>>` markers and
+  the command exits **3** naming the files; nothing is deleted. Fix them, `git add`, commit.
+- It never commits. Afterwards: `git diff`, `npm ci` (the template ships a lockfile for your
+  selection), `npm run check`, then commit. Work on a branch if you want an easy way back.
+- A project generated in local development mode (`--template PATH`) can be upgraded from that
+  checkout, with a warning that its origin is not published.
+
+Exit codes: `0` upgraded, already current, or previewed; `1` the project or origin cannot be
+upgraded safely (dirty, not a git root, unavailable origin, unreleased version); `2` rejected
+arguments or an unsupported transition; `3` upgraded with conflicts to resolve. Direct `copier
+update` still works, but it takes the newest tag whatever this devkit supports; always pin
+`--vcs-ref` (the template's `docs/upgrading.md`).
 
 ## Tests
 
 ```bash
-uv run pytest                  # everything here (about 15 s; no network)
-uv run pytest -m integration   # only the contract test against a web-core-template checkout
+uv run pytest                  # everything here (about 30 s; no network, no credentials)
+uv run pytest -m integration   # the live checks against a web-core-template checkout
 ```
 
-The integration test needs `../web-core-template` (or `$WEB_CORE_TEMPLATE`) and skips otherwise.
-All other tests use a tiny fixture template built into temporary git repositories, so versioned
-sources, an https-style published origin, upgrades, unavailable templates, existing destinations
-and failed generation are tested without a published repository or network access. The template
+Compatibility with every supported template release is tested **offline**:
+`tests/contracts/web-core/<version>.json` are snapshots of each release's questions (types, defaults,
+choices) and Node major, captured from release tags by `tools/capture_contract.py`, and
+`tests/test_contract_snapshots.py` checks the profile registry against all of them. This runs in CI.
+The **release gate** is separate and needs the template checked out (`../web-core-template`, or
+`$WEB_CORE_TEMPLATE`): `uv run pytest -m integration` proves each snapshot still equals the real
+template (a tag, or the working tree for the newest unreleased version) and that old and new releases
+really generate; it skips without a checkout. All other tests use small fixture templates built into
+temporary git repositories, so versioned sources, an https-style origin, upgrades, unavailable
+templates, existing destinations and failed generation need no published repository. The template
 repository tests content and runs `npm ci` and `npm run check` in generated apps.
+
+To re-capture a snapshot (when a release is tagged): `uv run python tools/capture_contract.py
+--template ../web-core-template --ref v0.2.0 --write`; `--check` verifies it.
+
+## Scratch space and cleanup
+
+Never delete by hand. `uv run python tools/scratch.py new` prints a fresh, marked workspace under the
+system temporary directory; `uv run python tools/scratch.py clean WORKSPACE [CHILD...]` removes only
+paths provably inside a workspace it created (it refuses symlinks, `..` escapes, `/`, the home
+directory and the current directory). A test fails if code or documented snippets contain recursive
+deletes, `git clean`, `git reset --hard` or forced pushes.
 
 ## Troubleshooting
 

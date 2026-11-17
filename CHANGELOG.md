@@ -2,6 +2,34 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## 0.3.0 (unreleased)
+
+- **`devkit upgrade PROJECT`** (`--dry-run`, `--to`, `--set`): upgrades an existing project to the newest
+  template release this devkit supports. It requires a git root with nothing uncommitted, keeps recorded
+  feature selections, refuses unsupported, older, unreleased or unpublished transitions, merges rather
+  than overwrites, and exits 3 naming files when conflicts remain. It never commits or deletes.
+- New profile option `zod` (`devkit new --set zod=true`), provided by template 0.2.0.
+- **Backward compatible with template 0.1.x:** the supported range is `>=0.1.0,<0.3.0`. Options declare
+  the release they first appear in (`since`); an option the selected release lacks is refused up front
+  (Copier would silently ignore it), and after generation `devkit` verifies every requested option was
+  recorded. Options also declare their default, checked against the template.
+- **Offline contract snapshots** (`tests/contracts/web-core/<version>.json`, `tools/capture_contract.py`):
+  CI now verifies compatibility with every supported release without credentials or network. The live
+  comparison against the real template is the release gate (`pytest -m integration`).
+- `devkit new` prints the selected options (`Options: zod=true`), also in dry runs.
+- Booleans: `devkit` accepts only `true`/`false`; the template itself is now strict as well.
+- **Safety:** `tools/scratch.py` (disposable workspaces with validated cleanup), a test that fails if code
+  or documented snippets contain recursive deletes, `git clean`, `git reset --hard` or forced pushes, and
+  a "Destructive commands" section in `AGENTS.md`.
+- Validation: `--to` and option arguments are checked before the project is inspected.
+- Documentation: feature-composition decision record, full-stack roadmap, release and upgrade strategy.
+- **Provisional:** `tests/contracts/web-core/0.2.0.json` was captured from the *unreleased* template working
+  tree (its `captured_from` field says so). It must be re-captured from the `v0.2.0` release tag with
+  `tools/capture_contract.py --ref v0.2.0 --write` before 0.3.0 is released; it was not generated from
+  a tag because that tag does not exist yet.
+- Not yet released: published versions are devkit 0.2.0 and template 0.1.0; `pyproject.toml` and
+  `src/devkit/__init__.py` still say 0.2.0 and are bumped at release time.
+
 ## 0.2.0
 
 - The Web Core template moved to its own repository, `web-core-template`, with its own versions.

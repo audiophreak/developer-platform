@@ -1,0 +1,19 @@
+{
+  "captured_from": "tag v0.1.0",
+  "node_major": 26,
+  "questions": {
+    "app_description": {
+      "default": "A Next.js application",
+      "type": "str"
+    },
+    "app_name": {
+      "type": "str"
+    },
+    "cache_components": {
+      "default": true,
+      "type": "bool"
+    }
+  },
+  "release": "v0.1.0",
+  "template": "web-core-template"
+}

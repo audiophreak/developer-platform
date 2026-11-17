@@ -31,6 +31,7 @@ python-downloads = "never"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tools"]
 addopts = "-ra"
 markers = [
   "integration: needs a web-core-template checkout (../web-core-template or $WEB_CORE_TEMPLATE)",

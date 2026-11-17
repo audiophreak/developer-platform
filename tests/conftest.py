@@ -65,6 +65,37 @@ def release(repo: Path, tag: str, **files: str) -> None:
     run_git(repo, "tag", tag)
 
 
+ZOD_QUESTION = "\nzod:\n  type: bool\n  default: false\n"
+FLAGS_WITH_ZOD = "cache_components={{ cache_components | lower }}\nzod={{ zod | lower }}\n"
+FLAGS_WITHOUT_ZOD = "cache_components={{ cache_components | lower }}\n"
+
+
+def make_versioned_template(destination: Path) -> Path:
+    """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x does.
+
+    Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1. Each writes its version into version.txt.
+    """
+    full = (MINI_TEMPLATE / "copier.yml").read_text()
+    assert ZOD_QUESTION in full
+    destination.mkdir(parents=True)
+    shutil.copytree(MINI_TEMPLATE / "template", destination / "template")
+
+    def write(copier_yml: str, flags: str) -> None:
+        (destination / "copier.yml").write_text(copier_yml)
+        (destination / "template" / "flags.txt.jinja").write_text(flags)
+
+    write(full.replace(ZOD_QUESTION, ""), FLAGS_WITHOUT_ZOD)
+    run_git(destination, "init", "-q", "-b", "main")
+    run_git(destination, "add", "-A")
+    run_git(destination, "commit", "-q", "-m", "initial")
+    release(destination, "v0.1.0")
+    release(destination, "v0.1.1")
+    write(full, FLAGS_WITH_ZOD)
+    release(destination, "v0.2.0")
+    release(destination, "v0.2.1")
+    return destination
+
+
 def make_remote(repo: Path, destination: Path) -> Path:
     """A bare clone standing in for a published repository."""
     destination.parent.mkdir(parents=True, exist_ok=True)

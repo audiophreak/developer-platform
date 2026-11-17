@@ -29,8 +29,10 @@ def test_web_core_declares_its_template_contract() -> None:
     template = get_profile("web-core").template
     assert template.url.startswith("https://") and template.url.endswith(".git")
     assert template.node_major == 26
-    assert [o.name for o in template.options] == ["cache_components"]
-    assert str(template.versions) == ">=0.1.0,<0.2.0"
+    assert [o.name for o in template.options] == ["cache_components", "zod"]
+    assert {o.name: o.default for o in template.options} == {"cache_components": True, "zod": False}
+    assert str(template.versions) == ">=0.1.0,<0.3.0"  # 0.1.x stays supported
+    assert {o.name: o.since for o in template.options} == {"cache_components": (0, 1, 0), "zod": (0, 2, 0)}
 
 
 def test_only_available_profiles_carry_a_template() -> None:
@@ -42,3 +44,10 @@ def test_version_range_is_half_open() -> None:
     supported = VersionRange((0, 1, 0), (0, 2, 0))
     assert supported.contains((0, 1, 0)) and supported.contains((0, 1, 99))
     assert not supported.contains((0, 0, 9)) and not supported.contains((0, 2, 0))
+
+
+def test_no_option_needs_a_release_newer_than_the_newest_supported_one() -> None:
+    template = get_profile("web-core").template
+    newest_possible = (template.versions.maximum_exclusive[0], template.versions.maximum_exclusive[1] - 1, 99)
+    for option in template.options:
+        assert option.since <= newest_possible, option.name

@@ -51,13 +51,14 @@ def test_new_creates_the_app_and_passes_options(
 ) -> None:
     code = cli.main(
         ["new", "cli-app", "--description", "Made by the CLI", "--set", "cache_components=false",
-         "--template", template, "--output-dir", str(out)]
+         "--set", "zod=true", "--template", template, "--output-dir", str(out)]
     )  # fmt: skip
     assert code == 0
     project = out / "cli-app"
     assert "Made by the CLI" in (project / "README.md").read_text()
-    assert (project / "flags.txt").read_text().strip() == "cache_components=false"
-    assert "npm run check" in capsys.readouterr().out
+    assert (project / "flags.txt").read_text().splitlines() == ["cache_components=false", "zod=true"]
+    out_text = capsys.readouterr().out
+    assert "Options: cache_components=false zod=true" in out_text and "npm run check" in out_text
 
 
 @pytest.mark.parametrize(
@@ -67,6 +68,9 @@ def test_new_creates_the_app_and_passes_options(
         (["new", "../escape"], "Invalid name"),
         (["new", "fine", "--set", "nonsense=1"], "Unknown option"),
         (["new", "fine", "--set", "cache_components=maybe"], "true/false"),
+        (["new", "fine", "--set", "zod=banana"], "true/false"),
+        (["new", "fine", "--set", "zod"], "NAME=VALUE"),
+        (["new", "fine", "--set", "forms=true"], "Unknown option"),
         (["new", "fine", "--profile", "full-stack"], "reserved for a later milestone"),
         (["new", "fine", "--profile", "native-ios"], "reserved for a later milestone"),
     ],
@@ -77,6 +81,17 @@ def test_rejected_input_exits_2_and_writes_nothing(
     code = cli.main([*argv, "--template", template, "--output-dir", str(out)])
     assert code == 2
     assert message in capsys.readouterr().err
+    assert list(out.iterdir()) == []
+
+
+def test_dry_run_with_a_feature_shows_the_selection_and_writes_nothing(
+    template: str, out: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code = cli.main(["new", "feat-app", "--set", "zod=true", "--dry-run", "--template", template,
+                     "--output-dir", str(out)])  # fmt: skip
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "[dry run] Options: zod=true" in text and "Nothing was written" in text
     assert list(out.iterdir()) == []
 
 

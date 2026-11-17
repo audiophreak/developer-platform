@@ -16,7 +16,7 @@ from .errors import OperationError, UsageError
 from .paths import find_platform_root
 from .profiles import DEFAULT_PROFILE, get_profile
 from .sources import ResolvedTemplate, resolve_template
-from .validation import parse_options, validate_destination_name
+from .validation import ensure_options_available, parse_options, validate_destination_name
 
 
 @dataclass(frozen=True)
@@ -79,6 +79,7 @@ def generate_project(
     template = resolve_template(spec, request.template, request.template_ref)
     if template.local_root is not None:
         _ensure_outside(destination, template.local_root, "the template checkout")
+    ensure_options_available(spec, options, template)
     if on_resolved is not None:
         on_resolved(template)
 
@@ -111,6 +112,9 @@ def generate_project(
     except Exception as exc:  # Copier raises many error types; report them uniformly.
         raise _generation_failed(profile.id, exc, destination) from exc
 
+    if not request.dry_run:
+        verify_options_recorded(destination, options)
+
     return NewResult(
         destination=destination,
         dry_run=request.dry_run,
@@ -126,3 +130,22 @@ def _generation_failed(profile: str, exc: Exception, destination: Path) -> Opera
         else ""
     )
     return OperationError(f"Generating profile {profile!r} failed: {exc}.{leftover}")
+
+
+def verify_options_recorded(destination: Path, options: dict[str, object]) -> None:
+    """Defence in depth: every requested option must appear, with its value, in the answers file.
+
+    Catches what the earlier checks cannot (a registry that is wrong about a release, a template
+    that renamed a question): Copier would otherwise ignore the answer without a word.
+    """
+    if not options:
+        return
+    answers_file = destination / ".copier-answers.yml"
+    recorded = answers_file.read_text(encoding="utf-8") if answers_file.is_file() else ""
+    for name, value in options.items():
+        wanted = f"{name}: {str(value).lower() if isinstance(value, bool) else value}"
+        if not any(line.strip() == wanted for line in recorded.splitlines()):
+            raise OperationError(
+                f"The project was generated, but option {name!r} was not recorded in its answers file, "
+                f"so the template ignored it. Inspect {destination} before using it."
+            )

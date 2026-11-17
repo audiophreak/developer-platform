@@ -8,8 +8,10 @@ versions. Generated applications carry their own `AGENTS.md` from their template
 
 - `uv sync` — create the project-local environment from `uv.lock`
 - `uv run devkit doctor` / `uv run devkit new NAME --dry-run`
-- `uv run pytest` — all tests (no network; the contract test against `../web-core-template`
-  skips if that checkout is absent)
+- `uv run pytest` — all tests (no network, no credentials; the live checks against
+  `../web-core-template` skip if that checkout is absent, the offline contract snapshots always run)
+- `uv run python tools/capture_contract.py ...` — capture or verify a template contract snapshot
+- `uv run python tools/scratch.py new|clean` — disposable workspaces with validated cleanup
 
 ## Working agreement
 
@@ -31,9 +33,31 @@ versions. Generated applications carry their own `AGENTS.md` from their template
 - Rules about an application's content (name, description, answers) belong in the template's
   `copier.yml`, never mirrored here. This repository checks only path safety and declared options.
 - A template release that changes the contract (Node major, questions) needs a matching change to
-  the registry's range, `node_major` or options, and the contract test must pass against it.
+  the registry's range, `node_major` or options (with their `since`), a new contract snapshot
+  (`tools/capture_contract.py`, from the release tag), and the live release gate
+  (`pytest -m integration`) must pass against it.
 - Published mode must render a release tag inside the supported range, never a branch or an
   untagged commit. Local mode (`--template PATH`) is for development only.
+
+## Destructive commands
+
+An unscoped delete is only as safe as the path typed into it, so these are rules, not preferences:
+
+- **Never** run recursive or forced removal by hand (`rm -r`, `rm -rf`), `find ... -delete`,
+  `git clean`, `git reset --hard`, forced pushes or recursive `chmod`/`chown`. A test fails if any
+  appear in the repository's code, CI or documented shell snippets.
+- **Prefer not deleting.** Make a fresh, unique directory for every run (`uv run python
+  tools/scratch.py new`, or `mktemp -d`) instead of clearing and reusing one.
+- **When something must be removed, use `uv run python tools/scratch.py clean WORKSPACE [CHILD...]`.**
+  It deletes only paths that are provably inside a workspace it created under the system temporary
+  directory, and refuses symlinks, `..` escapes, `/`, the home directory and the current
+  directory. Never write a literal system path, or a variable that might be empty, after a
+  delete command.
+- **Never hide a state-changing command's errors** (`2>/dev/null`); a failed delete must be visible.
+- **Tests of destructive behaviour use pure validators.** Never point anything that can delete at a
+  system path, not even one expected to be refused; test refusals with `assert_removable`.
+- Anything that would remove user data, a repository, a tag or a branch needs the user's explicit
+  approval first.
 
 ## Secure coding
 
