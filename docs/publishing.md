@@ -73,7 +73,7 @@ cd /path/to/web-core-template
 uv sync --locked
 uv run --locked pytest                       # all tests, including real npm builds (Node 26 required)
 git status                                   # review every file that will be committed
-git var GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT # confirm the identity (a noreply address)
+git var GIT_AUTHOR_IDENT; git var GIT_COMMITTER_IDENT   # confirm the identity (a noreply address)
 git add -A
 git commit -m "feat: web-core template v0.1.0"
 gh repo create audiophreak/web-core-template --private --source . --remote origin   # creates it; pushes nothing
@@ -96,7 +96,7 @@ uv sync --locked
 gh_git uv run --locked pytest                # the contract tests now run against the published tag (needs ../web-core-template)
 uv run devkit doctor
 git status
-git var GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT
+git var GIT_AUTHOR_IDENT; git var GIT_COMMITTER_IDENT
 git add -A
 git commit -m "feat: split the template into web-core-template; versioned template sources"
 gh repo create audiophreak/developer-platform --private --source . --remote origin
