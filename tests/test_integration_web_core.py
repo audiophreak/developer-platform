@@ -109,6 +109,26 @@ def test_local_mode_selects_the_zod_feature_in_the_real_template(questions: dict
     assert yaml.safe_load((default / ".copier-answers.yml").read_text())["zod"] is False
 
 
+def test_local_mode_selects_forms_with_zod_in_the_real_template(questions: dict, tmp_path: Path) -> None:
+    import json
+
+    project = generate_project(
+        NewRequest("forms-contract", "Forms contract test", tmp_path, template=str(TEMPLATE_DIR), options=("zod=true", "forms=true"))
+    ).destination
+    dependencies = json.loads((project / "package.json").read_text())["dependencies"]
+    assert dependencies["react-hook-form"] == "7.91.0" and dependencies["@hookform/resolvers"] == "5.9.2"
+    assert (project / "src/components/forms/example-form.tsx").is_file()
+    recorded = yaml.safe_load((project / ".copier-answers.yml").read_text())
+    assert (recorded["zod"], recorded["forms"]) == (True, True)
+
+
+def test_the_real_template_itself_rejects_forms_without_zod_and_devkit_adds_no_rule(questions: dict, tmp_path: Path) -> None:
+    with pytest.raises(UsageError, match="forms requires zod") as raised:
+        generate_project(NewRequest("no-zod", "x", tmp_path, template=str(TEMPLATE_DIR), options=("forms=true",)))
+    assert raised.value.exit_code == 2
+    assert not (tmp_path / "no-zod").exists()
+
+
 # ---------------------------------------------------------------- release gate: snapshots versus the real template
 
 
@@ -161,3 +181,18 @@ def test_an_older_supported_release_still_generates_with_its_own_options(questio
     assert answers["cache_components"] is False and "zod" not in answers
     with pytest.raises(UsageError, match="needs template v0.2.0"):
         generate_project(NewRequest("no-zod", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.1.0", options=("zod=true",)))
+
+
+def test_the_real_v0_2_0_release_still_generates_and_refuses_forms(questions: dict, tmp_path: Path) -> None:
+    """Backward compatibility against the real v0.2.0 tag (skipped if the checkout has no such tag)."""
+    if "v0.2.0" not in _tags():
+        pytest.skip("the template checkout has no v0.2.0 tag")
+    result = generate_project(
+        NewRequest("v020-contract", "v0.2.0 contract test", tmp_path, template=str(TEMPLATE_DIR),
+                   template_ref="v0.2.0", options=("zod=true",))
+    )  # fmt: skip
+    answers = yaml.safe_load((result.destination / ".copier-answers.yml").read_text())
+    assert answers["zod"] is True and "forms" not in answers
+    with pytest.raises(UsageError, match="'forms' needs template v0.3.0"):
+        generate_project(NewRequest("no-forms", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.2.0", options=("zod=true", "forms=true")))
+    assert not (tmp_path / "no-forms").exists()

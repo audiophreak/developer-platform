@@ -70,7 +70,7 @@ def test_new_creates_the_app_and_passes_options(
         (["new", "fine", "--set", "cache_components=maybe"], "true/false"),
         (["new", "fine", "--set", "zod=banana"], "true/false"),
         (["new", "fine", "--set", "zod"], "NAME=VALUE"),
-        (["new", "fine", "--set", "forms=true"], "Unknown option"),
+        (["new", "fine", "--set", "nonexistent=true"], "Unknown option"),
         (["new", "fine", "--profile", "full-stack"], "reserved for a later milestone"),
         (["new", "fine", "--profile", "native-ios"], "reserved for a later milestone"),
     ],

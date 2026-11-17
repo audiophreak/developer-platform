@@ -19,6 +19,18 @@ it has, and `devkit` also verifies after generation that every requested option 
 lines are covered by version-specific contract snapshots (section 6). devkit 0.2.0 continues to work
 with 0.1.x and never selects 0.2.0.
 
+### The Forms release (template `v0.3.0`, devkit `v0.4.0`)
+
+| Repository | Previous release | This release | Reason |
+| ---------- | ---------------- | ------------ | ------ |
+| `web-core-template` | `v0.2.0` | **`v0.3.0`** | New optional feature `forms` (requires `zod`). Additive: with it off, default and `zod` output is byte-identical to `v0.2.0` apart from `.copier-answers.yml` and one added `.prettierignore` line (`compare_release.py v0.2.0 --allow-change .prettierignore`). |
+| `developer-platform` | `v0.3.0` | **`v0.4.0`** | New `forms` option (`since` 0.3.0), range `>=0.1.0,<0.4.0`, contract snapshot `0.3.0.json` captured from the `v0.3.0` tag. |
+
+devkit 0.4.0 supports template 0.1.x, 0.2.x and 0.3.x. The `forms requires zod` rule stays in the
+template's `copier.yml`; devkit only knows which release first has the option and reports the
+template's rejection as a usage error. devkit 0.3.0 keeps working with templates up to 0.2.x and
+never selects 0.3.0.
+
 ## 2. Introducing features without altering existing tags
 
 - Published tags are immutable. A feature is commits on `main`, then a **new tag**; `v0.1.0` is never

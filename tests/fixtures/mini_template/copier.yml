@@ -22,3 +22,10 @@ cache_components:
 zod:
   type: bool
   default: false
+
+# The rule lives in the template, as in web-core-template: devkit never duplicates it.
+forms:
+  type: bool
+  default: false
+  validator: >-
+    {% if forms and not zod %}forms requires zod: answer zod=true as well (forms is never enabled for you).{% endif %}
