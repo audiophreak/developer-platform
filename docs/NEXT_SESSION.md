@@ -4,6 +4,10 @@ Written at the end of the Zod / feature-composition / release-hardening session.
 It contains local paths on purpose (it is a handoff for the owner); generalise or remove them before
 this repository is ever made public. It contains no credentials.
 
+**Status update for the Forms release.** Template `v0.3.0` (optional `forms`, requires `zod`) and devkit `v0.4.0`
+(`forms` option, range `>=0.1.0,<0.4.0`, `0.3.0.json` snapshot from the tag) are the current releases; see
+`release-strategy.md` ("The Forms release") and `CHANGELOG.md`. The text below is the earlier v0.3.0 handoff.
+
 **Status update for the v0.3.0 release.** Template `v0.2.0` is published (annotated tag at merge commit
 `f78f009`, CI green on Python 3.12 and 3.14). Platform pull request #1 is the `v0.3.0` release: version
 metadata bumped to 0.3.0, `uv.lock` updated for the version only, and the 0.2.0 contract snapshot

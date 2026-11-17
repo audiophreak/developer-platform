@@ -66,17 +66,26 @@ def release(repo: Path, tag: str, **files: str) -> None:
 
 
 ZOD_QUESTION = "\nzod:\n  type: bool\n  default: false\n"
+FORMS_QUESTION = (
+    "\nforms:\n  type: bool\n  default: false\n  validator: >-\n"
+    "    {% if forms and not zod %}forms requires zod: answer zod=true as well "
+    "(forms is never enabled for you).{% endif %}\n"
+)
 FLAGS_WITH_ZOD = "cache_components={{ cache_components | lower }}\nzod={{ zod | lower }}\n"
+FLAGS_WITH_FORMS = FLAGS_WITH_ZOD + "forms={{ forms | lower }}\n"
 FLAGS_WITHOUT_ZOD = "cache_components={{ cache_components | lower }}\n"
 
 
-def make_versioned_template(destination: Path) -> Path:
-    """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x does.
+def make_versioned_template(destination: Path, *, through_forms: bool = False) -> Path:
+    """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x has
+    `zod`, v0.3.x adds `forms` (which requires zod, enforced by the template's own validator).
 
-    Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1. Each writes its version into version.txt.
+    Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1, and with `through_forms` also v0.3.0 and v0.3.1. Each
+    writes its version into version.txt. Without `through_forms` the history stops at the zod line,
+    so tests written for it keep cutting later releases from that state.
     """
     full = (MINI_TEMPLATE / "copier.yml").read_text()
-    assert ZOD_QUESTION in full
+    assert ZOD_QUESTION in full and FORMS_QUESTION in full
     destination.mkdir(parents=True)
     shutil.copytree(MINI_TEMPLATE / "template", destination / "template")
 
@@ -84,15 +93,20 @@ def make_versioned_template(destination: Path) -> Path:
         (destination / "copier.yml").write_text(copier_yml)
         (destination / "template" / "flags.txt.jinja").write_text(flags)
 
-    write(full.replace(ZOD_QUESTION, ""), FLAGS_WITHOUT_ZOD)
+    without_forms = full.replace(FORMS_QUESTION, "")
+    write(without_forms.replace(ZOD_QUESTION, ""), FLAGS_WITHOUT_ZOD)
     run_git(destination, "init", "-q", "-b", "main")
     run_git(destination, "add", "-A")
     run_git(destination, "commit", "-q", "-m", "initial")
     release(destination, "v0.1.0")
     release(destination, "v0.1.1")
-    write(full, FLAGS_WITH_ZOD)
+    write(without_forms, FLAGS_WITH_ZOD)
     release(destination, "v0.2.0")
     release(destination, "v0.2.1")
+    if through_forms:
+        write(full, FLAGS_WITH_FORMS)
+        release(destination, "v0.3.0")
+        release(destination, "v0.3.1")
     return destination
 
 

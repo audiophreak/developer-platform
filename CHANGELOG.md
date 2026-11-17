@@ -2,12 +2,31 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
-## Unreleased
+## 0.4.0
 
+Adds the Web Core `forms` option and widens the supported template range to `>=0.1.0,<0.4.0`
+(template 0.1.x, 0.2.x and 0.3.x). Requires nothing new to be installed; no dependency changed.
+
+- New option `--set forms=true|false` for `web-core` (default `false`; first available in template
+  0.3.0): React Hook Form with the Zod resolver and a small accessible example form. **It requires
+  `zod=true`.** That rule is enforced by the template's own validator, not duplicated in devkit:
+  `forms=true` without `zod=true` is rejected before anything is created (`devkit new`, exit 2) or
+  changed (`devkit upgrade`, exit 2), and `forms` never turns Zod on. The registry refuses the option
+  up front for template releases before 0.3.0 (`--template-ref v0.2.x --set forms=true`, exit 2).
+- `devkit upgrade PROJECT --set forms=true` enables Forms on an existing Zod project (alone, or in the
+  same step that moves it from template 0.2.x to 0.3.x). Selections (`zod`, `cache_components`) and
+  user work survive; a feature the new release introduces stays off unless asked for.
+- New offline contract snapshot `tests/contracts/web-core/0.3.0.json`, captured from the published
+  template tag `v0.3.0` (all three snapshots verify against their tags).
+- New tests for Forms: registry, generation, rejection before creation, release gating, the supported
+  range, and upgrades (selections kept, Forms enabled later, invalid input fails safely). The mini
+  template used by the tests gained a v0.3.x line; the live gate (`pytest -m integration`) also generates
+  Forms projects from the real template.
+- Version bumped to 0.4.0 (`uv.lock` changed by that one line only).
 - CI now uploads downloadable test evidence for every run and Python version, including failed runs:
   JUnit XML, the console record, run metadata tied to the commit under test, and installed package
   versions (`docs/ci-evidence.md`). The exit code is unchanged; a quiet token-shaped-string scan (matches
-  are never printed) gates both the job summary and the upload. No release is implied by this change.
+  are never printed) gates both the job summary and the upload.
 
 ## 0.3.0
 

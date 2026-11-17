@@ -29,10 +29,10 @@ def test_web_core_declares_its_template_contract() -> None:
     template = get_profile("web-core").template
     assert template.url.startswith("https://") and template.url.endswith(".git")
     assert template.node_major == 26
-    assert [o.name for o in template.options] == ["cache_components", "zod"]
-    assert {o.name: o.default for o in template.options} == {"cache_components": True, "zod": False}
-    assert str(template.versions) == ">=0.1.0,<0.3.0"  # 0.1.x stays supported
-    assert {o.name: o.since for o in template.options} == {"cache_components": (0, 1, 0), "zod": (0, 2, 0)}
+    assert [o.name for o in template.options] == ["cache_components", "zod", "forms"]
+    assert {o.name: o.default for o in template.options} == {"cache_components": True, "zod": False, "forms": False}
+    assert str(template.versions) == ">=0.1.0,<0.4.0"  # 0.1.x and 0.2.x stay supported
+    assert {o.name: o.since for o in template.options} == {"cache_components": (0, 1, 0), "zod": (0, 2, 0), "forms": (0, 3, 0)}
 
 
 def test_only_available_profiles_carry_a_template() -> None:

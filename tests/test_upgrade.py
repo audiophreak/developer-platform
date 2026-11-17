@@ -261,7 +261,7 @@ def test_refuses_an_option_the_target_release_lacks(world) -> None:
     assert_untouched(project, before, commit)
 
 
-@pytest.mark.parametrize("option", ["zod=banana", "zod", "forms=true", "app_name=x"])
+@pytest.mark.parametrize("option", ["zod=banana", "zod", "nonexistent=true", "app_name=x"])
 def test_refuses_bad_options_before_touching_anything(world, option: str) -> None:
     _, _, out = world
     project = project_at(out, "v0.1.0")

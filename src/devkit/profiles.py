@@ -70,7 +70,7 @@ PROFILES: dict[str, Profile] = {
             # Assumes the template repository is published under the same GitHub account as
             # the reference application. Confirm or change before the first release.
             url="https://github.com/audiophreak/web-core-template.git",
-            versions=VersionRange((0, 1, 0), (0, 3, 0)),
+            versions=VersionRange((0, 1, 0), (0, 4, 0)),
             node_major=26,
             options=(
                 Option(
@@ -86,6 +86,13 @@ PROFILES: dict[str, Profile] = {
                     "Zod schema validation with a shared schema module (src/lib/schemas)",
                     default=False,
                     since=(0, 2, 0),
+                ),
+                Option(
+                    "forms",
+                    "bool",
+                    "React Hook Form with the Zod resolver and an example form (requires zod=true)",
+                    default=False,
+                    since=(0, 3, 0),
                 ),
             ),
         ),
