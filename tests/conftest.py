@@ -73,19 +73,26 @@ FORMS_QUESTION = (
 )
 FLAGS_WITH_ZOD = "cache_components={{ cache_components | lower }}\nzod={{ zod | lower }}\n"
 FLAGS_WITH_FORMS = FLAGS_WITH_ZOD + "forms={{ forms | lower }}\n"
+REST_API_QUESTION = (
+    "\nrest_api:\n  type: bool\n  default: false\n  validator: >-\n"
+    "    {% if rest_api and not zod %}rest_api requires zod: answer zod=true as well "
+    "(rest_api is never enabled for you).{% endif %}\n"
+)
+FLAGS_WITH_REST_API = FLAGS_WITH_FORMS + "rest_api={{ rest_api | lower }}\n"
 FLAGS_WITHOUT_ZOD = "cache_components={{ cache_components | lower }}\n"
 
 
-def make_versioned_template(destination: Path, *, through_forms: bool = False) -> Path:
+def make_versioned_template(destination: Path, *, through_forms: bool = False, through_rest_api: bool = False) -> Path:
     """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x has
     `zod`, v0.3.x adds `forms` (which requires zod, enforced by the template's own validator).
 
-    Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1, and with `through_forms` also v0.3.0 and v0.3.1. Each
-    writes its version into version.txt. Without `through_forms` the history stops at the zod line,
-    so tests written for it keep cutting later releases from that state.
+    v0.4.x adds `rest_api` (which also requires zod). Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1, with
+    `through_forms` also v0.3.0 and v0.3.1, and with `through_rest_api` also v0.4.0 and v0.4.1. Each
+    writes its version into version.txt. Without the flags the history stops at the earlier line, so
+    tests written for it keep cutting later releases from that state.
     """
     full = (MINI_TEMPLATE / "copier.yml").read_text()
-    assert ZOD_QUESTION in full and FORMS_QUESTION in full
+    assert ZOD_QUESTION in full and FORMS_QUESTION in full and REST_API_QUESTION in full
     destination.mkdir(parents=True)
     shutil.copytree(MINI_TEMPLATE / "template", destination / "template")
 
@@ -93,7 +100,8 @@ def make_versioned_template(destination: Path, *, through_forms: bool = False) -
         (destination / "copier.yml").write_text(copier_yml)
         (destination / "template" / "flags.txt.jinja").write_text(flags)
 
-    without_forms = full.replace(FORMS_QUESTION, "")
+    without_rest_api = full.replace(REST_API_QUESTION, "")
+    without_forms = without_rest_api.replace(FORMS_QUESTION, "")
     write(without_forms.replace(ZOD_QUESTION, ""), FLAGS_WITHOUT_ZOD)
     run_git(destination, "init", "-q", "-b", "main")
     run_git(destination, "add", "-A")
@@ -103,10 +111,14 @@ def make_versioned_template(destination: Path, *, through_forms: bool = False) -
     write(without_forms, FLAGS_WITH_ZOD)
     release(destination, "v0.2.0")
     release(destination, "v0.2.1")
-    if through_forms:
-        write(full, FLAGS_WITH_FORMS)
+    if through_forms or through_rest_api:
+        write(without_rest_api, FLAGS_WITH_FORMS)
         release(destination, "v0.3.0")
         release(destination, "v0.3.1")
+    if through_rest_api:
+        write(full, FLAGS_WITH_REST_API)
+        release(destination, "v0.4.0")
+        release(destination, "v0.4.1")
     return destination
 
 

@@ -35,7 +35,7 @@ repositories"); `devkit` never handles credentials itself.
 | `NAME`                    | Becomes the directory and the app name. The template validates the format (Web Core: lowercase letters, digits and single hyphens, up to 64, starting with a letter). The CLI itself only requires a single safe path segment. |
 | `--description TEXT`      | One line. The template validates it and supplies its own default when omitted. |
 | `--output-dir DIR`        | Existing directory to create `NAME` in. Default: the current directory. |
-| `--set NAME=VALUE`        | A template option or optional feature declared by the profile; repeatable. Web Core: `zod=true\|false` (Zod schema validation, default `false`), `forms=true\|false` (React Hook Form with an example form, default `false`; **requires `zod=true`**, template 0.3.0 or newer) and `cache_components=true\|false` (Next.js Cache Components with Partial Prefetching, default `true`). Only `true` and `false` are accepted; unknown options are rejected before anything is fetched, and an option the selected release lacks is refused. |
+| `--set NAME=VALUE`        | A template option or optional feature declared by the profile; repeatable. Web Core: `zod=true\|false` (Zod schema validation, default `false`), `forms=true\|false` (React Hook Form with an example form, default `false`; **requires `zod=true`**, template 0.3.0 or newer), `rest_api=true\|false` (versioned REST API v1 with RFC 9457 errors, default `false`; **requires `zod=true`**, template 0.4.0 or newer) and `cache_components=true\|false` (Next.js Cache Components with Partial Prefetching, default `true`). Only `true` and `false` are accepted; unknown options are rejected before anything is fetched, and an option the selected release lacks is refused. |
 | `--template-ref vX.Y.Z`   | Render a specific release instead of the newest supported one. Releases outside the supported range are refused. |
 | `--template PATH`         | **Development:** render a local template checkout as it is on disk (working tree included). See below. |
 | `--template URL`          | Use a different template origin, with the same release rules.        |
@@ -90,6 +90,20 @@ uv run devkit upgrade ../my-app --set forms=true     # on an existing project th
 `forms` needs `zod`: `--set forms=true` without `--set zod=true` is rejected by the template before
 anything is created (exit 2); it never switches Zod on for you, and devkit does not duplicate that
 rule. `--template-ref v0.2.1 --set forms=true` is refused up front because that release has no `forms`.
+
+`rest_api=true` (template 0.4.0 or newer) adds versioned route handlers under `/api/v1` with shared Zod
+contracts, RFC 9457 problem-details errors, and handler tests that call the handlers directly. It adds
+files only: no dependency and no lockfile change.
+
+```bash
+uv run devkit new my-app --set zod=true --set rest_api=true --output-dir ..
+uv run devkit new my-app --set zod=true --set forms=true --set rest_api=true --output-dir ..
+uv run devkit upgrade ../my-app --set rest_api=true     # on an existing project that already has zod
+```
+
+`rest_api` needs `zod` exactly like `forms`: without it the template rejects the request before anything
+is created (exit 2), it never switches Zod on for you, and devkit does not duplicate the rule.
+`--template-ref v0.3.1 --set rest_api=true` is refused up front because that release has no `rest_api`.
 How features work: `feature-composition.md`; what is planned: `full-stack-plan.md`.
 
 ## Develop the template locally (no published repository needed)
@@ -116,8 +130,8 @@ uv run devkit upgrade ../my-app --set zod=true   # change an option or feature w
 What it does, and refuses:
 
 - It reads the project's recorded template origin and release (`.copier-answers.yml`) and requires
-  the release to be a plain tag inside the range this devkit supports (`>=0.1.0,<0.4.0` for Web Core
-  at devkit 0.4.0). A project from an older or newer release, or from commits after a release,
+  the release to be a plain tag inside the range this devkit supports (`>=0.1.0,<0.5.0` for Web Core
+  at devkit 0.5.0). A project from an older or newer release, or from commits after a release,
   is refused with an explanation.
 - The project must be the root of a git repository with **nothing uncommitted** (no modified and no
   untracked files). Otherwise it refuses and changes nothing, so your work can never mix with the

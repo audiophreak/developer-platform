@@ -129,6 +129,24 @@ def test_the_real_template_itself_rejects_forms_without_zod_and_devkit_adds_no_r
     assert not (tmp_path / "no-zod").exists()
 
 
+def test_local_mode_selects_rest_api_with_and_without_forms_in_the_real_template(questions: dict, tmp_path: Path) -> None:
+    for name, extra in (("api-contract", ()), ("api-forms-contract", ("forms=true",))):
+        project = generate_project(
+            NewRequest(name, "REST API contract test", tmp_path, template=str(TEMPLATE_DIR), options=("zod=true", "rest_api=true", *extra))
+        ).destination
+        for relative in ("src/app/api/v1/app-info/route.ts", "src/app/api/v1/examples/validate/route.ts", "src/server/api/responses.ts", "docs/api-v1.md"):
+            assert (project / relative).is_file(), relative
+        recorded = yaml.safe_load((project / ".copier-answers.yml").read_text())
+        assert (recorded["zod"], recorded["rest_api"], recorded["forms"]) == (True, True, bool(extra))
+
+
+def test_the_real_template_itself_rejects_rest_api_without_zod(questions: dict, tmp_path: Path) -> None:
+    with pytest.raises(UsageError, match="rest_api requires zod") as raised:
+        generate_project(NewRequest("api-no-zod", "x", tmp_path, template=str(TEMPLATE_DIR), options=("rest_api=true",)))
+    assert raised.value.exit_code == 2
+    assert not (tmp_path / "api-no-zod").exists()
+
+
 # ---------------------------------------------------------------- release gate: snapshots versus the real template
 
 
@@ -196,3 +214,18 @@ def test_the_real_v0_2_0_release_still_generates_and_refuses_forms(questions: di
     with pytest.raises(UsageError, match="'forms' needs template v0.3.0"):
         generate_project(NewRequest("no-forms", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.2.0", options=("zod=true", "forms=true")))
     assert not (tmp_path / "no-forms").exists()
+
+
+def test_the_real_v0_3_0_release_still_generates_and_refuses_rest_api(questions: dict, tmp_path: Path) -> None:
+    """Backward compatibility against the real v0.3.0 tag (skipped if the checkout has no such tag)."""
+    if "v0.3.0" not in _tags():
+        pytest.skip("the template checkout has no v0.3.0 tag")
+    result = generate_project(
+        NewRequest("v030-contract", "v0.3.0 contract test", tmp_path, template=str(TEMPLATE_DIR),
+                   template_ref="v0.3.0", options=("zod=true", "forms=true"))
+    )  # fmt: skip
+    recorded = yaml.safe_load((result.destination / ".copier-answers.yml").read_text())
+    assert recorded["forms"] is True and "rest_api" not in recorded
+    with pytest.raises(UsageError, match="'rest_api' needs template v0.4.0"):
+        generate_project(NewRequest("no-api", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.3.0", options=("zod=true", "rest_api=true")))
+    assert not (tmp_path / "no-api").exists()

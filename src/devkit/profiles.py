@@ -70,7 +70,7 @@ PROFILES: dict[str, Profile] = {
             # Assumes the template repository is published under the same GitHub account as
             # the reference application. Confirm or change before the first release.
             url="https://github.com/audiophreak/web-core-template.git",
-            versions=VersionRange((0, 1, 0), (0, 4, 0)),
+            versions=VersionRange((0, 1, 0), (0, 5, 0)),
             node_major=26,
             options=(
                 Option(
@@ -93,6 +93,13 @@ PROFILES: dict[str, Profile] = {
                     "React Hook Form with the Zod resolver and an example form (requires zod=true)",
                     default=False,
                     since=(0, 3, 0),
+                ),
+                Option(
+                    "rest_api",
+                    "bool",
+                    "Versioned REST API v1 with RFC 9457 errors (requires zod=true)",
+                    default=False,
+                    since=(0, 4, 0),
                 ),
             ),
         ),

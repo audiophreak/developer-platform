@@ -55,7 +55,7 @@ reviewing, and `uv_lock_sha256` with `sha256sum uv.lock` at that commit.
 
 ## Skipped tests
 
-Twelve tests in `tests/test_integration_web_core.py` skip in CI, with the reason "no web-core-template
+Fifteen tests in `tests/test_integration_web_core.py` skip in CI, with the reason "no web-core-template
 checkout": they compare the platform with the real private template and are the **local release
 gate** (`uv run pytest -m integration`, run where the template is checked out). They are skipped,
 not deleted, because running them in CI would need a credential able to read the private template

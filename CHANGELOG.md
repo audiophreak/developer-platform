@@ -2,6 +2,30 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## 0.5.0
+
+Adds the Web Core `rest_api` option and widens the supported template range to `>=0.1.0,<0.5.0`
+(template 0.1.x to 0.4.x). Requires nothing new to be installed; no dependency changed.
+
+- New option `--set rest_api=true|false` for `web-core` (default `false`; first available in template
+  0.4.0): the versioned REST API v1 (route handlers under `/api/v1`, shared Zod contracts, RFC 9457
+  problem-details errors, handler tests). **It requires `zod=true`.** As with `forms`, the rule is
+  enforced by the template's own validator, not duplicated in devkit: `rest_api=true` without
+  `zod=true` is rejected before anything is created (`devkit new`, exit 2) or changed
+  (`devkit upgrade`, exit 2), and `rest_api` never turns Zod on. It is independent of `forms`. The
+  registry refuses the option up front for template releases before 0.4.0 (exit 2).
+- `devkit upgrade PROJECT --set rest_api=true` enables the API on an existing Zod project, alone or in
+  the same step that moves it from template 0.3.x to 0.4.x. Selections (`zod`, `forms`,
+  `cache_components`) and user work survive; the new option stays off unless asked for. The template
+  adds files only, so dependencies and the lockfile do not change.
+- New offline contract snapshot `tests/contracts/web-core/0.4.0.json`, captured from the published
+  template tag `v0.4.0` (all four snapshots verify against their tags).
+- New tests for `rest_api`: registry, generation with and without Forms, rejection before creation,
+  release gating, the supported range, upgrades (selections kept, enabled later, invalid input fails
+  safely), version reporting, and live-gate tests against the real template. The mini template used by
+  the tests gained a v0.4.x line.
+- Version bumped to 0.5.0 (`uv.lock` changed by that one line only).
+
 ## 0.4.0
 
 Adds the Web Core `forms` option and widens the supported template range to `>=0.1.0,<0.4.0`
