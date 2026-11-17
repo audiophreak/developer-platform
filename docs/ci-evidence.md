@@ -71,13 +71,21 @@ summary on every run.
   environment**, and JUnit logging is off. Test failure messages can quote test data, so treat
   artifacts as repository-internal: in a private repository they are visible to people who can read it.
 - Before upload, the reports are scanned for token-shaped strings (GitHub tokens, private-key
-  headers, AWS key ids). A hit fails the job and **skips the upload**.
+  headers, AWS key ids) with a **quiet** `grep -q`: the matching text is never printed. A hit, or a
+  scan that cannot run, fails the job with a generic error and **skips the upload**. The job summary
+  is written only after the scan passes. A regression test runs the workflow's own scan on fake
+  credentials in a disposable directory and checks that it rejects them without printing them.
 - A test (`tests/test_ci_workflow.py`) fails if the workflow stops uploading on failure, drops the
   scan, widens the artifact path, extends retention beyond 30 days, adds a credential, or dumps the
   environment.
 
 ## Limitations
 
+- **The scan protects the artifact, not the log.** Test output is shown live in the job log while
+  pytest runs (`tee`), before any scan can run; a secret that a test prints would be in that log
+  regardless. GitHub masks only secrets it knows (registered secrets), and this project stores none.
+  The rule is: tests must never print credentials. The scan is a backstop for the uploaded files.
+- The scan recognizes a few common shapes, not every secret, and does not decode or unpack anything.
 - This is evidence, not attestation: anyone who can change the workflow can change what it reports,
   and nothing signs the artifacts. Branch protection (not enabled) would make review of workflow
   changes mandatory.
