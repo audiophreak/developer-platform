@@ -31,6 +31,18 @@ template's `copier.yml`; devkit only knows which release first has the option an
 template's rejection as a usage error. devkit 0.3.0 keeps working with templates up to 0.2.x and
 never selects 0.3.0.
 
+### The REST API release (template `v0.4.0`, devkit `v0.5.0`)
+
+| Repository | Previous release | This release | Reason |
+| ---------- | ---------------- | ------------ | ------ |
+| `web-core-template` | `v0.3.0` | **`v0.4.0`** | New optional feature `rest_api` (requires `zod`, no npm dependency, no lockfile change). Additive: with it off, every selection of `zod`, `forms` and `cache_components` is byte-identical to `v0.3.0` apart from `.copier-answers.yml` (`compare_release.py v0.3.0`, no allowance). |
+| `developer-platform` | `v0.4.0` | **`v0.5.0`** | New `rest_api` option (`since` 0.4.0), range `>=0.1.0,<0.5.0`, contract snapshot `0.4.0.json` captured from the `v0.4.0` tag. |
+
+devkit 0.5.0 supports template 0.1.x to 0.4.x. The `rest_api requires zod` rule stays in the template's
+`copier.yml`; devkit only knows which release first has the option and reports the template's rejection
+as a usage error. The option name is a plain identifier like the others, so no parser changes were
+needed. devkit 0.4.0 keeps working with templates up to 0.3.x and never selects 0.4.0.
+
 ## 2. Introducing features without altering existing tags
 
 - Published tags are immutable. A feature is commits on `main`, then a **new tag**; `v0.1.0` is never

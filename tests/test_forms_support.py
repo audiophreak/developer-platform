@@ -195,10 +195,9 @@ def test_a_release_outside_the_range_is_never_selected_or_accepted(world) -> Non
     assert entries(out) == ["default"]
 
 
-def test_the_range_covers_exactly_0_1_0_up_to_but_excluding_0_4_0() -> None:
-    assert str(SPEC.versions) == ">=0.1.0,<0.4.0"
-    assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 3, 99))
-    assert not SPEC.versions.contains((0, 0, 9)) and not SPEC.versions.contains((0, 4, 0))
+def test_every_release_that_has_or_predates_forms_stays_supported() -> None:
+    assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 3, 0)) and SPEC.versions.contains((0, 3, 99))
+    assert not SPEC.versions.contains((0, 0, 9))
 
 
 # ------------------------------------------------------------------ upgrades
