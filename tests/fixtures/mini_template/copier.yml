@@ -1,0 +1,20 @@
+# A tiny stand-in for a real template, used to test devkit's source handling without network.
+# It honours the same contract as web-core-template: app_name, app_description, cache_components.
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+
+app_name:
+  type: str
+  validator: >-
+    {% if not (app_name | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Use lowercase letters, digits and hyphens.
+    {% endif %}
+
+app_description:
+  type: str
+  default: Mini default description
+
+cache_components:
+  type: bool
+  default: true
