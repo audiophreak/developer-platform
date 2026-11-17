@@ -18,3 +18,7 @@ app_description:
 cache_components:
   type: bool
   default: true
+
+zod:
+  type: bool
+  default: false

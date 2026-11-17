@@ -21,5 +21,11 @@ class OperationError(DevkitError):
     exit_code = 1
 
 
+class UpgradeConflictError(DevkitError):
+    """The upgrade finished but left merge conflicts for the user to resolve. Nothing was discarded."""
+
+    exit_code = 3
+
+
 class TemplateUnavailableError(OperationError):
     """The template source could not be reached or has no usable release."""

@@ -12,7 +12,9 @@ from devkit.sources import (
     format_tag,
     inspect_checkout,
     list_release_tags,
+    local_question_names,
     parse_release_tag,
+    question_names,
     recordable_path,
     resolve_template,
 )
@@ -126,7 +128,7 @@ def test_no_supported_release_is_unavailable(tmp_path: Path) -> None:
 def test_a_template_url_override_still_resolves_a_release(tagged_repo: Path, tmp_path: Path) -> None:
     bare = tmp_path / "remote.git"
     run_git(tmp_path, "clone", "-q", "--bare", str(tagged_repo), str(bare))
-    resolved = resolve_template(SPEC, template=str(bare))
+    resolved = resolve_template(_spec("unused"), template=str(bare))
     assert (resolved.mode, resolved.ref, resolved.location) == ("published", "v0.1.1", str(bare))
 
 
@@ -186,3 +188,56 @@ def test_recordable_path_is_home_relative_for_git_checkouts(tmp_path: Path) -> N
     assert recordable_path(outside, git, home=home) == str(outside.resolve())
     not_git = SourceInfo(is_git_root=False, has_commits=False, dirty=False)
     assert recordable_path(checkout, not_git, home=home) == str(checkout.resolve())
+
+
+# ---------------------------------------------------------------- reading questions without a YAML parser
+
+
+COPIER_YML = """# a comment: with a colon
+_subdirectory: template
+_exclude:
+  - a
+  - b
+
+app_name:
+  type: str
+  validator: >-
+    {% if not (app_name | regex_search('^x$')) %}
+    note: this colon is inside a block scalar
+    {% endif %}
+
+zod:
+  type: yaml
+  default: false
+  choices: [false, true]
+# trailing: comment
+lock_key:
+  type: str
+  when: false
+"""
+
+
+def test_question_names_are_the_top_level_keys_without_settings() -> None:
+    assert question_names(COPIER_YML) == {"app_name", "zod", "lock_key"}
+
+
+def test_nested_commented_and_underscore_keys_are_not_questions() -> None:
+    assert question_names("_a: 1\n  nested: 2\n# commented: 3\nreal: 4\n") == {"real"}
+    assert question_names("") == set()
+
+
+def test_local_question_names_use_the_working_tree_at_head_and_git_for_a_ref(tmp_path: Path) -> None:
+    repo = make_template_repo(tmp_path / "tpl")
+    (repo / "copier.yml").write_text("app_name:\n  type: str\n")
+    run_git(repo, "commit", "-q", "-am", "old")
+    run_git(repo, "tag", "v0.1.0")
+    (repo / "copier.yml").write_text("app_name:\n  type: str\nzod:\n  type: yaml\n")  # uncommitted
+    assert local_question_names(repo, None) == {"app_name", "zod"}
+    assert local_question_names(repo, "HEAD") == {"app_name", "zod"}  # Copier renders the working tree
+    assert local_question_names(repo, "v0.1.0") == {"app_name"}  # a ref is judged by its own file
+
+
+def test_unreadable_questions_are_reported_as_unknown(tmp_path: Path) -> None:
+    repo = make_template_repo(tmp_path / "tpl")
+    assert local_question_names(repo, "v9.9.9") is None
+    assert local_question_names(tmp_path / "missing", None) is None

@@ -1,0 +1,36 @@
+{
+  "captured_from": "tag v0.2.0",
+  "node_major": 26,
+  "questions": {
+    "app_description": {
+      "default": "A Next.js application",
+      "type": "str"
+    },
+    "app_name": {
+      "type": "str"
+    },
+    "cache_components": {
+      "choices": [
+        false,
+        true
+      ],
+      "default": true,
+      "type": "yaml"
+    },
+    "lock_key": {
+      "computed": true,
+      "default": "{{ 'zod' if zod else 'base' }}",
+      "type": "str"
+    },
+    "zod": {
+      "choices": [
+        false,
+        true
+      ],
+      "default": false,
+      "type": "yaml"
+    }
+  },
+  "release": "v0.2.0",
+  "template": "web-core-template"
+}

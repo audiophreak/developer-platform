@@ -39,6 +39,8 @@ class Option:
     name: str
     kind: Literal["bool", "str"]
     help: str
+    default: bool | str | None = None  # the template's default; a contract test keeps them equal
+    since: Version = (0, 1, 0)  # first template release that has this question
 
 
 @dataclass(frozen=True)
@@ -68,13 +70,22 @@ PROFILES: dict[str, Profile] = {
             # Assumes the template repository is published under the same GitHub account as
             # the reference application. Confirm or change before the first release.
             url="https://github.com/audiophreak/web-core-template.git",
-            versions=VersionRange((0, 1, 0), (0, 2, 0)),
+            versions=VersionRange((0, 1, 0), (0, 3, 0)),
             node_major=26,
             options=(
                 Option(
                     "cache_components",
                     "bool",
-                    "Next.js Cache Components with Partial Prefetching (default: true)",
+                    "Next.js Cache Components with Partial Prefetching",
+                    default=True,
+                    since=(0, 1, 0),
+                ),
+                Option(
+                    "zod",
+                    "bool",
+                    "Zod schema validation with a shared schema module (src/lib/schemas)",
+                    default=False,
+                    since=(0, 2, 0),
                 ),
             ),
         ),

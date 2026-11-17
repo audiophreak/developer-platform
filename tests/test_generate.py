@@ -34,6 +34,20 @@ def published(tmp_path, point_profile_at, https_origin):
     return repo, remote, url, out
 
 
+@pytest.fixture()
+def versioned_published(tmp_path, point_profile_at, https_origin):
+    """Like `published`, but the releases mirror the real history (v0.1.x lacks zod, v0.2.x has it)."""
+    from conftest import make_versioned_template
+
+    repo = make_versioned_template(tmp_path / "work" / "web-core-template")
+    remote = make_remote(repo, tmp_path / "remote" / "web-core-template.git")
+    url = https_origin(remote)
+    point_profile_at(url, versions=((0, 1, 0), (0, 3, 0)))
+    out = tmp_path / "out"
+    out.mkdir()
+    return repo, remote, url, out
+
+
 # ------------------------------------------------------------ published mode
 
 
@@ -67,7 +81,7 @@ def test_template_defaults_apply_when_nothing_is_given(published) -> None:
     _, _, _, out = published
     project = generate_project(NewRequest("default-app", output_dir=out)).destination
     assert "Mini default description" in (project / "README.md").read_text()
-    assert (project / "flags.txt").read_text().strip() == "cache_components=true"
+    assert (project / "flags.txt").read_text().splitlines() == ["cache_components=true", "zod=false"]
 
 
 def test_options_reach_the_template(published) -> None:
@@ -75,8 +89,44 @@ def test_options_reach_the_template(published) -> None:
     project = generate_project(
         NewRequest("opt-app", output_dir=out, options=("cache_components=false",))
     ).destination
-    assert (project / "flags.txt").read_text().strip() == "cache_components=false"
+    assert (project / "flags.txt").read_text().splitlines() == ["cache_components=false", "zod=false"]
     assert _answers(project)["cache_components"] is False
+
+
+def test_the_zod_feature_option_is_selected_with_set_and_recorded(versioned_published) -> None:
+    _, _, _, out = versioned_published
+    project = generate_project(
+        NewRequest("zod-app", output_dir=out, options=("zod=true",))
+    ).destination
+    assert (project / "flags.txt").read_text().splitlines() == ["cache_components=true", "zod=true"]
+    answers = _answers(project)
+    assert answers["zod"] is True and answers["cache_components"] is True  # others keep defaults
+
+
+def test_features_and_other_options_compose(versioned_published) -> None:
+    _, _, _, out = versioned_published
+    project = generate_project(
+        NewRequest("both-app", output_dir=out, options=("zod=true", "cache_components=false"))
+    ).destination
+    assert (project / "flags.txt").read_text().splitlines() == ["cache_components=false", "zod=true"]
+
+
+@pytest.mark.parametrize("value", ["maybe", "banana", "2", ""])
+def test_unsupported_feature_values_are_rejected_before_anything_is_written(
+    published, value: str
+) -> None:
+    """Raw Copier would treat `zod=banana` as true; devkit parses booleans strictly."""
+    _, _, _, out = published
+    with pytest.raises(UsageError, match="true/false"):
+        generate_project(NewRequest("bad-app", output_dir=out, options=(f"zod={value}",)))
+    assert _entries(out) == []
+
+
+def test_a_feature_can_be_given_only_once(published) -> None:
+    _, _, _, out = published
+    with pytest.raises(UsageError, match="more than once"):
+        generate_project(NewRequest("dup", output_dir=out, options=("zod=true", "zod=false")))
+    assert _entries(out) == []
 
 
 def test_unknown_options_are_rejected_before_anything_is_written(published) -> None:

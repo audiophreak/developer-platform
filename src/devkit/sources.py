@@ -139,6 +139,40 @@ def _resolve_release(spec: TemplateSpec, location: str, ref: str | None) -> str:
     return format_tag(max(candidates))
 
 
+_TOP_LEVEL_KEY = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):", re.MULTILINE)
+
+
+def question_names(copier_yml: str) -> set[str]:
+    """Question names in a copier.yml: its top-level keys that do not start with an underscore.
+
+    Deliberately not a YAML parser (no extra dependency): Copier configuration keys sit at column 0
+    and everything beneath them is indented, which is all this needs. Settings start with `_`.
+    """
+    return set(_TOP_LEVEL_KEY.findall(copier_yml))
+
+
+def local_question_names(root: Path, ref: str | None) -> set[str] | None:
+    """Questions the local template checkout will have when rendered at `ref`, or None if unreadable.
+
+    No ref or HEAD means "as it is on disk" (Copier renders the working tree). Anything else is
+    read from git, so a pinned older release is judged by its own copier.yml.
+    """
+    if ref in (None, "HEAD"):
+        try:
+            return question_names((root / "copier.yml").read_text(encoding="utf-8"))
+        except OSError:
+            return None
+    result = git("show", f"{ref}:copier.yml", cwd=root)
+    if result is None or result.returncode != 0:
+        return None
+    return question_names(result.stdout)
+
+
+def release_version(template: "ResolvedTemplate") -> Version | None:
+    """The release being rendered, when it is known: a release tag in either mode."""
+    return parse_release_tag(template.ref) if template.ref else None
+
+
 def _is_bare_repository(path: Path) -> bool:
     """A bare repository is an origin to fetch releases from, not a checkout to render."""
     return (path / "HEAD").is_file() and (path / "objects").is_dir() and not (path / ".git").exists()
