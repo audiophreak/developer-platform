@@ -43,6 +43,20 @@ devkit 0.5.0 supports template 0.1.x to 0.4.x. The `rest_api requires zod` rule 
 as a usage error. The option name is a plain identifier like the others, so no parser changes were
 needed. devkit 0.4.0 keeps working with templates up to 0.3.x and never selects 0.4.0.
 
+### The database release (template `v0.5.0`, devkit `v0.6.0`)
+
+| Repository | Previous release | This release | Reason |
+| ---------- | ---------------- | ------------ | ------ |
+| `web-core-template` | `v0.4.0` | **`v0.5.0`** | New optional choice feature `database` (`none`, `postgres`, `supabase`; requires `zod`). Four new lockfiles, seven in all; existing locks unchanged. Additive: with it off, every selection of `zod`, `forms`, `rest_api` and `cache_components` is byte-identical to `v0.4.0` apart from `.copier-answers.yml` (`compare_release.py v0.4.0`, no allowance). |
+| `developer-platform` | `v0.5.0` | **`v0.6.0`** | New `database` option (a choice, `since` 0.5.0), range `>=0.1.0,<0.6.0`, contract snapshot `0.5.0.json` captured from the `v0.5.0` tag, and the rule that `upgrade` does not change an established provider. |
+
+devkit 0.6.0 supports template 0.1.x to 0.5.x. The `database requires zod` rule stays in the template's
+`copier.yml`; devkit knows the allowed values, which release first has the option, and that the provider is
+sticky. devkit 0.5.0 keeps working with templates up to 0.4.x and never selects 0.5.0.
+
+The template's CI gained a separate `database` job (Docker is required there: the tests fail rather than skip
+when it is missing); the matrix jobs leave the Docker tests out. Platform CI is unchanged.
+
 ## 2. Introducing features without altering existing tags
 
 - Published tags are immutable. A feature is commits on `main`, then a **new tag**; `v0.1.0` is never

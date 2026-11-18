@@ -74,6 +74,8 @@ def test_the_registry_matches_each_supported_release(snapshot: Path) -> None:
         assert question["default"] == option.default, f"{option.name}: default differs"
         if option.kind == "bool":
             assert boolean_form_is_valid(question, version), f"{option.name}: unexpected boolean form {question}"
+        if option.choices:
+            assert question["type"] == "str" and question["choices"] == list(option.choices), f"{option.name}: the choices differ from the registry's"
 
 
 def test_every_question_devkit_does_not_know_is_computed_or_unneeded() -> None:

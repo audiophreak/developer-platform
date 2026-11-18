@@ -2,6 +2,35 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## 0.6.0
+
+Adds the Web Core `database` option and widens the supported template range to `>=0.1.0,<0.6.0`
+(template 0.1.x to 0.5.x). Requires nothing new to be installed; no dependency changed.
+
+- New option `--set database=none|postgres|supabase` for `web-core` (default `none`; first available in
+  template 0.5.0): a local PostgreSQL 17 database with SQL migrations and a typed, server-only data-access
+  layer, run with Docker Compose (`postgres`) or the pinned Supabase CLI's local stack (`supabase`). It is a
+  **choice**, not a boolean, so a project selects one provider. **It requires `zod=true`**, enforced by the
+  template's own validator and not duplicated in devkit: `database=postgres` without `zod=true` is rejected
+  before anything is created (`devkit new`, exit 2) or changed (`devkit upgrade`, exit 2). It is independent of
+  `forms` and `rest_api`. The registry refuses it up front for template releases before 0.5.0, and devkit
+  itself rejects any value other than `none`, `postgres` and `supabase` before a template is read.
+- Registry: an `Option` can declare its closed set of `choices`, and can be `sticky`.
+- `devkit upgrade PROJECT --set database=postgres` enables a database on an existing Zod project (alone, or in
+  the same step that moves it from template 0.4.x to 0.5.x). **A sticky option cannot be changed by
+  `upgrade` once it is set to something other than its default**: switching an established project between
+  `postgres` and `supabase`, or back to `none`, is refused (exit 2, nothing changed). It swaps the tooling
+  under existing data and moving data between providers is not automated; generate a new project with the
+  other provider and move the data deliberately. Repeating the established provider is fine, and every other
+  option can still be changed.
+- New offline contract snapshot `tests/contracts/web-core/0.5.0.json`, captured from the published template
+  tag `v0.5.0` (all five snapshots verify against their tags).
+- New tests for `database`: the registry and its choices, generation with each provider and with and without
+  Forms and the REST API, rejection before creation, release gating, the supported range, upgrades (selections
+  kept, enabled later, invalid input fails safely) and the provider lock, version reporting, and live-gate
+  tests against the real template. The mini template used by the tests gained a v0.5.x line.
+- Version bumped to 0.6.0 (`uv.lock` changed by that one line only).
+
 ## 0.5.0
 
 Adds the Web Core `rest_api` option and widens the supported template range to `>=0.1.0,<0.5.0`

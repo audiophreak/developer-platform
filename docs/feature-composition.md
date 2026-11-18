@@ -2,8 +2,9 @@
 
 How optional application features are represented, selected, enforced, locked, recorded and
 upgraded. Implemented for Zod in `web-core-template` 0.2.0 and `devkit` 0.3.0, and for Forms (which requires Zod,
-enforced by the template) in `web-core-template` 0.3.0 and `devkit` 0.4.0, and for the REST API (also requiring
-Zod) in `web-core-template` 0.4.0 and `devkit` 0.5.0;
+enforced by the template) in `web-core-template` 0.3.0 and `devkit` 0.4.0, for the REST API (also requiring
+Zod) in `web-core-template` 0.4.0 and `devkit` 0.5.0, and for the database (a choice feature, also requiring
+Zod) in `web-core-template` 0.5.0 and `devkit` 0.6.0;
 the roadmap for the rest is `full-stack-plan.md`, versions and upgrades are in
 `release-strategy.md`, and the template-side mechanics are in that repository's
 `docs/features.md`.
@@ -172,8 +173,10 @@ No. The existing one-way contract is extended in two small ways:
   template's default (so the documented behaviour cannot drift from the real one).
 - Options declare the release they first appear in (`since`), so one `devkit` can support several
   template lines: devkit 0.5.0 supports `>=0.1.0,<0.5.0`, refuses `--set zod=true` for 0.1.x,
-  `--set forms=true` for anything before 0.3.0 and `--set rest_api=true` for anything before 0.4.0. The
-  `forms requires zod` and `rest_api requires zod` rules are not in devkit: the
+  `--set forms=true` for anything before 0.3.0, `--set rest_api=true` for anything before 0.4.0 and
+  `--set database=...` for anything before 0.5.0. A feature with providers is a **choice option**: devkit knows its
+  closed set of values and that an established provider is not changed by `upgrade` (a `sticky` option), but not
+  the `forms requires zod`, `rest_api requires zod` and `database requires zod` rules, which are not in devkit: the
   template's validator rejects it and devkit reports that as a usage error.
 
 `devkit` still does not read `features.yml`: it declares options, the template enforces rules.

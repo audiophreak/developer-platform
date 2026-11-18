@@ -89,10 +89,9 @@ def test_rest_api_is_a_boolean_option_that_defaults_off_and_starts_at_template_0
     assert not hasattr(OPTION, "requires")  # ...but never encoded as a rule in devkit
 
 
-def test_the_range_is_0_1_0_up_to_but_excluding_0_5_0() -> None:
-    assert str(SPEC.versions) == ">=0.1.0,<0.5.0"
-    assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 4, 99))
-    assert not SPEC.versions.contains((0, 0, 9)) and not SPEC.versions.contains((0, 5, 0))
+def test_every_release_that_has_or_predates_rest_api_stays_supported() -> None:
+    assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 4, 0)) and SPEC.versions.contains((0, 4, 99))
+    assert not SPEC.versions.contains((0, 0, 9))
 
 
 def test_the_prerequisite_is_not_checked_by_devkit_itself() -> None:
@@ -103,11 +102,11 @@ def test_the_prerequisite_is_not_checked_by_devkit_itself() -> None:
 
 def test_the_version_is_reported_consistently_and_matches_the_package_metadata(capsys) -> None:
     pyproject = tomllib.loads((PLATFORM_ROOT / "pyproject.toml").read_text())
-    assert devkit.__version__ == pyproject["project"]["version"] == "0.5.0"
+    assert devkit.__version__ == pyproject["project"]["version"]  # the exact release is pinned in test_database_support.py
     with pytest.raises(SystemExit) as exited:
         cli.main(["--version"])
     assert exited.value.code == 0
-    assert capsys.readouterr().out.strip() == "devkit 0.5.0"
+    assert capsys.readouterr().out.strip() == f"devkit {devkit.__version__}"
 
 
 # ------------------------------------------------------------------ generation
