@@ -43,6 +43,18 @@ devkit 0.5.0 supports template 0.1.x to 0.4.x. The `rest_api requires zod` rule 
 as a usage error. The option name is a plain identifier like the others, so no parser changes were
 needed. devkit 0.4.0 keeps working with templates up to 0.3.x and never selects 0.4.0.
 
+### The authentication release (template `v0.6.0`, devkit `v0.7.0`)
+
+| Repository | Previous release | This release | Reason |
+| ---------- | ---------------- | ------------ | ------ |
+| `web-core-template` | `v0.5.1` | **`v0.6.0`** | New optional feature `auth` (Better Auth on either database provider; requires `zod`, `rest_api` and a `database`). Four new lockfiles, eleven in all; existing locks unchanged. Additive: with it off, every configuration is byte-identical to `v0.5.1` apart from `.copier-answers.yml` and, for the `supabase` provider only, two `.gitignore` lines that ignore the Supabase CLI's local state (`compare_release.py v0.5.1`, one exact allowance). |
+| `developer-platform` | `v0.6.0` | **`v0.7.0`** | New `auth` option (`since` 0.6.0, sticky), range `>=0.1.0,<0.7.0`, contract snapshot `0.6.0.json` captured from the `v0.6.0` tag. |
+
+`v0.5.1` was a template-only patch between them (a `db:status` fix for the Supabase provider found while
+accepting the database release); devkit 0.6.0 already supported it. devkit 0.7.0 supports template 0.1.x to 0.6.x.
+The prerequisite rules stay in the template's `copier.yml`; devkit 0.6.0 keeps working with templates up to 0.5.x
+and never selects 0.6.0.
+
 ### The database release (template `v0.5.0`, devkit `v0.6.0`)
 
 | Repository | Previous release | This release | Reason |

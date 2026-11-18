@@ -42,3 +42,9 @@ database:
   choices: [none, postgres, supabase]
   validator: >-
     {% if database != 'none' and not zod %}database requires zod: answer zod=true as well (database is never enabled for you).{% endif %}
+
+auth:
+  type: bool
+  default: false
+  validator: >-
+    {% if auth and not zod %}auth requires zod: answer zod=true as well (auth is never enabled for you).{% elif auth and not rest_api %}auth requires rest_api: answer rest_api=true as well (auth is never enabled for you).{% elif auth and database == 'none' %}auth requires a database: answer database=postgres or database=supabase as well (auth is never enabled for you).{% endif %}

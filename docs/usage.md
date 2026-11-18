@@ -35,7 +35,7 @@ repositories"); `devkit` never handles credentials itself.
 | `NAME`                    | Becomes the directory and the app name. The template validates the format (Web Core: lowercase letters, digits and single hyphens, up to 64, starting with a letter). The CLI itself only requires a single safe path segment. |
 | `--description TEXT`      | One line. The template validates it and supplies its own default when omitted. |
 | `--output-dir DIR`        | Existing directory to create `NAME` in. Default: the current directory. |
-| `--set NAME=VALUE`        | A template option or optional feature declared by the profile; repeatable. Web Core: `zod=true\|false` (Zod schema validation, default `false`), `forms=true\|false` (React Hook Form with an example form, default `false`; **requires `zod=true`**, template 0.3.0 or newer), `rest_api=true\|false` (versioned REST API v1 with RFC 9457 errors, default `false`; **requires `zod=true`**, template 0.4.0 or newer), `database=none\|postgres\|supabase` (a local PostgreSQL with migrations and a server-only data layer, default `none`; **requires `zod=true`**, template 0.5.0 or newer) and `cache_components=true\|false` (Next.js Cache Components with Partial Prefetching, default `true`). Only `true` and `false` are accepted; unknown options are rejected before anything is fetched, and an option the selected release lacks is refused. |
+| `--set NAME=VALUE`        | A template option or optional feature declared by the profile; repeatable. Web Core: `zod=true\|false` (Zod schema validation, default `false`), `forms=true\|false` (React Hook Form with an example form, default `false`; **requires `zod=true`**, template 0.3.0 or newer), `rest_api=true\|false` (versioned REST API v1 with RFC 9457 errors, default `false`; **requires `zod=true`**, template 0.4.0 or newer), `database=none\|postgres\|supabase` (a local PostgreSQL with migrations and a server-only data layer, default `none`; **requires `zod=true`**, template 0.5.0 or newer), `auth=true\|false` (Better Auth sign-in, a least-privilege database role and a protected API, default `false`; **requires `zod=true`, `rest_api=true` and a `database`**, template 0.6.0 or newer) and `cache_components=true\|false` (Next.js Cache Components with Partial Prefetching, default `true`). Only `true` and `false` are accepted; unknown options are rejected before anything is fetched, and an option the selected release lacks is refused. |
 | `--template-ref vX.Y.Z`   | Render a specific release instead of the newest supported one. Releases outside the supported range are refused. |
 | `--template PATH`         | **Development:** render a local template checkout as it is on disk (working tree included). See below. |
 | `--template URL`          | Use a different template origin, with the same release rules.        |
@@ -128,6 +128,34 @@ automated. Generate a new project with the other provider and move your data del
 `docs/database.md`). Naming the provider the project already has is fine, and so is upgrading without naming it.
 Raw `copier update` has no such protection (a Copier validator cannot see the previous answer): it silently
 swaps the tooling, so use `devkit upgrade`.
+
+`auth=true` (template 0.6.0 or newer) adds Better Auth email/password authentication with sessions in PostgreSQL, a
+least-privilege `app_runtime` database role for the running application, owner-scoped data protected by row level
+security, a protected `/api/v1/items` API, real-database tests and `docs/auth.md`. It works the same on both
+database providers (Supabase Auth is not used):
+
+```bash
+uv run devkit new my-app --set zod=true --set rest_api=true --set database=postgres --set auth=true --output-dir ..
+uv run devkit new my-app --set zod=true --set rest_api=true --set database=supabase --set auth=true --output-dir ..
+uv run devkit upgrade ../my-app --set auth=true   # on an existing project that has zod, rest_api and a database
+```
+
+`auth` needs `zod`, `rest_api` and a `database`: if any is missing the template rejects the request before anything is
+created or changed (exit 2), nothing is switched on for you, and devkit does not duplicate the rules. `forms` is
+independent. The generated project is ready for local development and integration testing, **not for open
+registration on the public internet**: email verification, password-reset delivery, trusted-proxy and origin
+configuration are the deployer's to provide (the generated `docs/auth.md` lists them). After enabling it on an
+existing project run `npm ci`, `npm run db:init` (it appends the new settings to your `.env.local` and changes
+nothing else) and `npm run db:migrate`.
+
+**Upgrading a Supabase project that has already run its local stack:** the CLI creates `supabase/.temp` and
+`supabase/.branches`, which templates before 0.6.0 did not ignore, and `upgrade` needs a clean working tree. Add those two
+paths to the project's `.gitignore` and commit it before upgrading (new projects from 0.6.0 ignore them already).
+
+**Established authentication is not removed by `upgrade`.** Once a project has `auth=true`,
+`devkit upgrade --set auth=false` is refused with exit 2 and nothing is touched: removing it would orphan accounts and
+data ownership, and a script must not decide that for you (see the generated `docs/auth.md` for the manual steps).
+Naming `auth=true` again is fine, and so is upgrading without naming it.
 How features work: `feature-composition.md`; what is planned: `full-stack-plan.md`.
 
 ## Develop the template locally (no published repository needed)
@@ -154,8 +182,8 @@ uv run devkit upgrade ../my-app --set zod=true   # change an option or feature w
 What it does, and refuses:
 
 - It reads the project's recorded template origin and release (`.copier-answers.yml`) and requires
-  the release to be a plain tag inside the range this devkit supports (`>=0.1.0,<0.6.0` for Web Core
-  at devkit 0.6.0). A project from an older or newer release, or from commits after a release,
+  the release to be a plain tag inside the range this devkit supports (`>=0.1.0,<0.7.0` for Web Core
+  at devkit 0.7.0). A project from an older or newer release, or from commits after a release,
   is refused with an explanation.
 - The project must be the root of a git repository with **nothing uncommitted** (no modified and no
   untracked files). Otherwise it refuses and changes nothing, so your work can never mix with the

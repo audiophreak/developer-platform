@@ -85,23 +85,38 @@ DATABASE_QUESTION = (
     "(database is never enabled for you).{% endif %}\n"
 )
 FLAGS_WITH_DATABASE = FLAGS_WITH_REST_API + "database={{ database }}\n"
+AUTH_QUESTION = (
+    "\nauth:\n  type: bool\n  default: false\n  validator: >-\n"
+    "    {% if auth and not zod %}auth requires zod: answer zod=true as well (auth is never enabled for you)."
+    "{% elif auth and not rest_api %}auth requires rest_api: answer rest_api=true as well (auth is never enabled for you)."
+    "{% elif auth and database == 'none' %}auth requires a database: answer database=postgres or database=supabase as well "
+    "(auth is never enabled for you).{% endif %}\n"
+)
+FLAGS_WITH_AUTH = FLAGS_WITH_DATABASE + "auth={{ auth | lower }}\n"
 FLAGS_WITHOUT_ZOD = "cache_components={{ cache_components | lower }}\n"
 
 
 def make_versioned_template(
-    destination: Path, *, through_forms: bool = False, through_rest_api: bool = False, through_database: bool = False
+    destination: Path,
+    *,
+    through_forms: bool = False,
+    through_rest_api: bool = False,
+    through_database: bool = False,
+    through_auth: bool = False,
 ) -> Path:
     """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x has
     `zod`, v0.3.x adds `forms` (which requires zod, enforced by the template's own validator).
 
     v0.4.x adds `rest_api` (which also requires zod). Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1, with
     `through_forms` also v0.3.0 and v0.3.1, with `through_rest_api` also v0.4.0 and v0.4.1, and with
-    `through_database` also v0.5.0 and v0.5.1 (v0.5.x adds `database`, which also requires zod). Each
+    `through_database` also v0.5.0 and v0.5.1 (v0.5.x adds `database`, which also requires zod), and with
+    `through_auth` also v0.6.0 and v0.6.1 (v0.6.x adds `auth`, which requires zod, rest_api and a database). Each
     writes its version into version.txt. Without the flags the history stops at the earlier line, so
     tests written for it keep cutting later releases from that state.
     """
     full = (MINI_TEMPLATE / "copier.yml").read_text()
     assert ZOD_QUESTION in full and FORMS_QUESTION in full and REST_API_QUESTION in full and DATABASE_QUESTION in full
+    assert AUTH_QUESTION in full
     destination.mkdir(parents=True)
     shutil.copytree(MINI_TEMPLATE / "template", destination / "template")
 
@@ -109,7 +124,8 @@ def make_versioned_template(
         (destination / "copier.yml").write_text(copier_yml)
         (destination / "template" / "flags.txt.jinja").write_text(flags)
 
-    without_database = full.replace(DATABASE_QUESTION, "")
+    without_auth = full.replace(AUTH_QUESTION, "")
+    without_database = without_auth.replace(DATABASE_QUESTION, "")
     without_rest_api = without_database.replace(REST_API_QUESTION, "")
     without_forms = without_rest_api.replace(FORMS_QUESTION, "")
     write(without_forms.replace(ZOD_QUESTION, ""), FLAGS_WITHOUT_ZOD)
@@ -121,18 +137,22 @@ def make_versioned_template(
     write(without_forms, FLAGS_WITH_ZOD)
     release(destination, "v0.2.0")
     release(destination, "v0.2.1")
-    if through_forms or through_rest_api or through_database:
+    if through_forms or through_rest_api or through_database or through_auth:
         write(without_rest_api, FLAGS_WITH_FORMS)
         release(destination, "v0.3.0")
         release(destination, "v0.3.1")
-    if through_rest_api or through_database:
+    if through_rest_api or through_database or through_auth:
         write(without_database, FLAGS_WITH_REST_API)
         release(destination, "v0.4.0")
         release(destination, "v0.4.1")
-    if through_database:
-        write(full, FLAGS_WITH_DATABASE)
+    if through_database or through_auth:
+        write(without_auth, FLAGS_WITH_DATABASE)
         release(destination, "v0.5.0")
         release(destination, "v0.5.1")
+    if through_auth:
+        write(full, FLAGS_WITH_AUTH)
+        release(destination, "v0.6.0")
+        release(destination, "v0.6.1")
     return destination
 
 

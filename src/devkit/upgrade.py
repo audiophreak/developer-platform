@@ -71,6 +71,11 @@ class UpgradeResult:
     conflicts: tuple[str, ...] = field(default_factory=tuple)
 
 
+def _canonical(value: object) -> str | None:
+    """Answers are recorded as text (`true`) and options arrive typed (`True`): compare them as lower-case text."""
+    return None if value is None else str(value).lower()
+
+
 def read_answers(text: str) -> dict[str, str]:
     """The flat `key: value` lines Copier writes. Quotes around a value are removed."""
     answers: dict[str, str] = {}
@@ -154,13 +159,11 @@ def plan_upgrade(request: UpgradeRequest) -> UpgradePlan:
         )
 
     for option in spec.options:
-        recorded, requested = answers.get(option.name), options.get(option.name)
-        if option.sticky and requested is not None and recorded not in (None, option.default) and str(requested) != recorded:
+        recorded, requested = _canonical(answers.get(option.name)), _canonical(options.get(option.name))
+        if option.sticky and requested is not None and recorded not in (None, _canonical(option.default)) and requested != recorded:
+            reason = option.sticky_reason.format(recorded=repr(recorded), requested=repr(requested))
             raise UsageError(
-                f"{option.name} is {recorded!r} in this project; changing it to {requested!r} is not an upgrade. "
-                "It swaps the tooling under existing data, and moving data between providers is not automated. "
-                f"Keep {recorded!r}, or generate a new project with {requested!r} and move your data deliberately "
-                "(see the project's docs/database.md)."
+                f"{option.name} is {recorded!r} in this project; changing it to {requested!r} is not an upgrade. {reason}"
             )
 
     listing = source if not source.startswith("~") else str(Path(source).expanduser())

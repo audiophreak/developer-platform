@@ -88,13 +88,12 @@ def test_database_is_a_closed_choice_that_defaults_to_none_and_starts_at_templat
     assert OPTION.choices == ("none", "postgres", "supabase") and OPTION.default in OPTION.choices
     assert OPTION.sticky is True and "zod" in OPTION.help  # the prerequisite is described, never encoded as a rule
     assert not hasattr(OPTION, "requires")
-    assert [o.name for o in SPEC.options if o.sticky] == ["database"]  # nothing else is locked once chosen
+    assert [o.name for o in SPEC.options if o.sticky] == ["database", "auth"]  # nothing else is locked once chosen
 
 
-def test_the_range_is_0_1_0_up_to_but_excluding_0_6_0() -> None:
-    assert str(SPEC.versions) == ">=0.1.0,<0.6.0"
-    assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 5, 99))
-    assert not SPEC.versions.contains((0, 0, 9)) and not SPEC.versions.contains((0, 6, 0))
+def test_every_release_through_0_5_x_stays_supported() -> None:  # the exact range is pinned in test_auth_support.py
+    assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 5, 0)) and SPEC.versions.contains((0, 5, 99))
+    assert not SPEC.versions.contains((0, 0, 9))
 
 
 @pytest.mark.parametrize("value", ["none", "postgres", "supabase"])
@@ -117,11 +116,11 @@ def test_the_prerequisite_is_not_checked_by_devkit_itself() -> None:
 
 def test_the_version_is_reported_consistently_and_matches_the_package_metadata(capsys) -> None:
     pyproject = tomllib.loads((PLATFORM_ROOT / "pyproject.toml").read_text())
-    assert devkit.__version__ == pyproject["project"]["version"] == "0.6.0"
+    assert devkit.__version__ == pyproject["project"]["version"]  # the exact release is pinned in test_auth_support.py
     with pytest.raises(SystemExit) as exited:
         cli.main(["--version"])
     assert exited.value.code == 0
-    assert capsys.readouterr().out.strip() == "devkit 0.6.0"
+    assert capsys.readouterr().out.strip() == f"devkit {devkit.__version__}"
 
 
 # ------------------------------------------------------------------ generation
