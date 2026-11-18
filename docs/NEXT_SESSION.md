@@ -4,7 +4,13 @@ Written at the end of the Zod / feature-composition / release-hardening session.
 It contains local paths on purpose (it is a handoff for the owner); generalise or remove them before
 this repository is ever made public. It contains no credentials.
 
-**Status update for the database release.** Template `v0.5.0` (optional choice feature `database`: `postgres` or
+**Status update for the authentication release.** Template `v0.6.0` (optional `auth`: Better Auth on either database
+provider, a least-privilege runtime role, owner-scoped data, a protected `/api/v1` API; requires `zod`, `rest_api` and a
+`database`) and devkit `v0.7.0` (`auth` option, sticky, range `>=0.1.0,<0.7.0`, `0.6.0.json` snapshot from the tag) are
+the current releases; see `release-strategy.md` ("The authentication release"), `architecture.md` (the decision to use
+Better Auth rather than Supabase Auth) and `CHANGELOG.md`.
+
+**Earlier status update (the database release).** Template `v0.5.0` (optional choice feature `database`: `postgres` or
 `supabase`, requires `zod`) and devkit `v0.6.0` (`database` option, range `>=0.1.0,<0.6.0`, `0.5.0.json` snapshot from
 the tag, `upgrade` keeps an established provider) are the current releases; see `release-strategy.md` ("The database
 release") and `CHANGELOG.md`.

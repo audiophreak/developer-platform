@@ -43,6 +43,7 @@ class Option:
     since: Version = (0, 1, 0)  # first template release that has this question
     choices: tuple[str, ...] = ()  # the closed set of values of a text option (the template validates it too)
     sticky: bool = False  # once set to a value other than the default, `devkit upgrade` will not change it
+    sticky_reason: str = ""  # why, shown when `upgrade` refuses; may use {recorded} and {requested}
 
 
 @dataclass(frozen=True)
@@ -72,7 +73,7 @@ PROFILES: dict[str, Profile] = {
             # Assumes the template repository is published under the same GitHub account as
             # the reference application. Confirm or change before the first release.
             url="https://github.com/audiophreak/web-core-template.git",
-            versions=VersionRange((0, 1, 0), (0, 6, 0)),
+            versions=VersionRange((0, 1, 0), (0, 7, 0)),
             node_major=26,
             options=(
                 Option(
@@ -112,6 +113,26 @@ PROFILES: dict[str, Profile] = {
                     since=(0, 5, 0),
                     choices=("none", "postgres", "supabase"),
                     sticky=True,
+                    sticky_reason=(
+                        "It swaps the tooling under existing data, and moving data between providers is not automated. "
+                        "Keep {recorded}, or generate a new project with {requested} and move your data deliberately "
+                        "(see the project's docs/database.md)."
+                    ),
+                ),
+                Option(
+                    "auth",
+                    "bool",
+                    "Better Auth email/password authentication on either database provider, with a least-privilege "
+                    "runtime role, owner-scoped data and a protected API (requires zod=true, rest_api=true and "
+                    "database=postgres|supabase)",
+                    default=False,
+                    since=(0, 6, 0),
+                    sticky=True,
+                    sticky_reason=(
+                        "Removing authentication is not automated: it would orphan accounts, sessions and the "
+                        "ownership of data, and the migrations and the data need a decision of yours. Keep it, or "
+                        "follow the manual steps in the project's docs/auth.md."
+                    ),
                 ),
             ),
         ),

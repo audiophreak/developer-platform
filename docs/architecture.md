@@ -36,15 +36,15 @@ Each available profile carries a `TemplateSpec`:
 | Field        | Meaning                                                                         |
 | ------------ | ------------------------------------------------------------------------------- |
 | `url`        | The published origin. Recorded verbatim in generated projects (portable).       |
-| `versions`   | Half-open range of template releases this devkit supports, e.g. `>=0.1.0,<0.6.0`. |
+| `versions`   | Half-open range of template releases this devkit supports, e.g. `>=0.1.0,<0.7.0`. |
 | `node_major` | Node.js major those releases pin; `doctor` checks it.                           |
-| `options`    | Template questions `--set NAME=VALUE` may set: type, default, `since` (the first release that has it), optionally a closed set of `choices`, and `sticky` (an option such as the database provider that `upgrade` will not change once it is set). |
+| `options`    | Template questions `--set NAME=VALUE` may set: type, default, `since` (the first release that has it), optionally a closed set of `choices`, and `sticky` with a `sticky_reason` (an option such as the database provider or `auth` that `upgrade` will not change once it is set). |
 
 The template must accept `app_name` and `app_description` (always sent) and every declared option
 from its `since` release on. A template release that breaks any of this (new Node major, renamed
 question) must bump its minor version, and the platform widens or moves the range in the same
-change. The range may span several template lines: devkit 0.6.0 supports `>=0.1.0,<0.6.0`, and an
-option newer than the selected release (`zod` needs 0.2.0, `forms` 0.3.0, `rest_api` 0.4.0, `database` 0.5.0) is refused up front, because Copier
+change. The range may span several template lines: devkit 0.7.0 supports `>=0.1.0,<0.7.0`, and an
+option newer than the selected release (`zod` needs 0.2.0, `forms` 0.3.0, `rest_api` 0.4.0, `database` 0.5.0, `auth` 0.6.0) is refused up front, because Copier
 silently ignores an answer for a question that does not exist. After a real generation `devkit`
 also verifies each requested option was recorded in the answers file.
 
@@ -139,7 +139,7 @@ that Homebrew cannot pin per project. `doctor` reports mise as optional.
 Reserved profiles are rejected with an explicit message so later milestones do not change the CLI.
 
 **Optional features.** Within a profile, optional features are boolean Copier questions in the
-template (`zod`, `forms`, `rest_api` and `database` exist; the rest are planned). How they are represented, enforced, locked,
+template (`zod`, `forms`, `rest_api`, `database` and `auth` exist; the rest are planned). How they are represented, enforced, locked,
 recorded and upgraded is decided in `feature-composition.md`; the roadmap, dependency relationships
 and trust boundaries for the planned ones are in `full-stack-plan.md`.
 
@@ -208,3 +208,29 @@ docs:
    use the platform.
 2. How profiles compose across templates (layering or one template).
 3. Whether to teach `devkit upgrade` to apply a chain of releases (today it goes to one target).
+
+## Decision: Better Auth on PostgreSQL for both database providers
+
+Authentication (`auth`, template 0.6.0, devkit 0.7.0) uses **Better Auth, directly on PostgreSQL, for both
+`database=postgres` and `database=supabase`**. It does not use Supabase Auth, and the local Supabase stack keeps
+its Auth service disabled.
+
+- **One architecture, not two.** The data layer is provider-independent (`pg`, plain SQL migrations, a
+  repository that does not know the provider), and Better Auth supports PostgreSQL directly, so authentication
+  can be provider-independent too. Supabase remains a PostgreSQL and local-services provider. Supporting Supabase
+  Auth beside another system would mean two session mechanisms, two authorization models and two sets of
+  behaviour to keep equivalent, and application code that must know which one it runs on.
+- **Authorization is PostgreSQL's, not the provider's.** Ownership is enforced by row level security that reads a
+  user id the server sets for one transaction, with an application role that cannot bypass it. That works on any
+  PostgreSQL, so the same migrations, repository and tests run on both providers; tests run the same scenario on
+  both and require identical outcomes.
+- **The schema stays in the one migration history.** Better Auth's tables come from its own schema tooling,
+  reviewed and committed as SQL in the same `supabase/migrations/` sequence; nothing alters the schema at run time,
+  and a test fails if a Better Auth version needs more.
+- **Consequences.** There is no `auth=supabase-auth`; the Supabase Data API exposes neither the application's
+  schema nor the authentication schema; the roadmap's earlier idea that `database=supabase` would provide auth is
+  withdrawn. A future provider only has to be PostgreSQL to inherit the whole model.
+- **Boundaries.** The prerequisites (`zod`, `rest_api`, a `database`) are the template's rules, enforced by its
+  validator. devkit only knows the option, the release that introduced it and that an established `auth` is not
+  undone by `upgrade` (a sticky option, like the provider). The generated project says plainly what remains the
+  deployer's responsibility before public use.

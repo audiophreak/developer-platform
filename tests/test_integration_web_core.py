@@ -176,6 +176,31 @@ def test_the_real_template_itself_rejects_a_database_without_zod_and_devkit_adds
     assert not (tmp_path / "db-bad").exists()
 
 
+@pytest.mark.parametrize("provider", ["postgres", "supabase"])
+def test_local_mode_generates_an_auth_application_with_each_provider(questions: dict, tmp_path: Path, provider: str) -> None:
+    project = generate_project(
+        NewRequest(f"{provider}-auth", "Auth contract test", tmp_path, template=str(TEMPLATE_DIR),
+                   options=("zod=true", "rest_api=true", f"database={provider}", "auth=true"))
+    ).destination  # fmt: skip
+    recorded = yaml.safe_load((project / ".copier-answers.yml").read_text())
+    assert (recorded["zod"], recorded["rest_api"], recorded["database"], recorded["auth"]) == (True, True, provider, True)
+    for relative in ("src/server/auth/auth.ts", "src/server/auth/scope.ts", "src/app/api/auth/[...all]/route.ts", "src/app/api/v1/items/route.ts",
+                     "supabase/migrations/20260301000000_create_auth.sql", "scripts/db/roles.mjs", "docs/auth.md", ".npmrc"):  # fmt: skip
+        assert (project / relative).is_file(), relative
+
+
+@pytest.mark.parametrize(
+    ("options", "message"),
+    [(("auth=true",), "auth requires zod"), (("zod=true", "auth=true"), "auth requires rest_api"),
+     (("zod=true", "rest_api=true", "auth=true"), "auth requires a database")],
+)  # fmt: skip
+def test_the_real_template_itself_rejects_auth_without_its_prerequisites_and_devkit_adds_no_rule(questions: dict, tmp_path: Path, options, message: str) -> None:
+    with pytest.raises(UsageError, match=message) as raised:
+        generate_project(NewRequest("auth-missing", "x", tmp_path, template=str(TEMPLATE_DIR), options=options))
+    assert raised.value.exit_code == 2
+    assert not (tmp_path / "auth-missing").exists()
+
+
 # ---------------------------------------------------------------- release gate: snapshots versus the real template
 
 
@@ -273,3 +298,18 @@ def test_the_real_v0_4_0_release_still_generates_and_refuses_a_database(question
     with pytest.raises(UsageError, match="'database' needs template v0.5.0"):
         generate_project(NewRequest("no-db", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.4.0", options=("zod=true", "database=postgres")))
     assert not (tmp_path / "no-db").exists()
+
+
+def test_the_real_v0_5_1_release_still_generates_and_refuses_auth(questions: dict, tmp_path: Path) -> None:
+    """Backward compatibility against the real v0.5.1 tag (skipped if the checkout has no such tag)."""
+    if "v0.5.1" not in _tags():
+        pytest.skip("the template checkout has no v0.5.1 tag")
+    result = generate_project(
+        NewRequest("v051-contract", "v0.5.1 contract test", tmp_path, template=str(TEMPLATE_DIR),
+                   template_ref="v0.5.1", options=("zod=true", "rest_api=true", "database=supabase"))
+    )  # fmt: skip
+    recorded = yaml.safe_load((result.destination / ".copier-answers.yml").read_text())
+    assert recorded["database"] == "supabase" and "auth" not in recorded
+    with pytest.raises(UsageError, match="'auth' needs template v0.6.0"):
+        generate_project(NewRequest("no-auth", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.5.1", options=("zod=true", "rest_api=true", "database=postgres", "auth=true")))
+    assert not (tmp_path / "no-auth").exists()

@@ -2,6 +2,41 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## 0.7.0
+
+Adds the Web Core `auth` option and widens the supported template range to `>=0.1.0,<0.7.0` (template 0.1.x
+to 0.6.x). No dependency changed.
+
+- New option `--set auth=true|false` for `web-core` (default `false`; first available in template 0.6.0):
+  Better Auth email/password authentication, a least-privilege `app_runtime` database role, owner-scoped data
+  with row level security and a protected `/api/v1` API, on **either** database provider. **It requires
+  `zod=true`, `rest_api=true` and `database=postgres` or `supabase`**, enforced by the template's own validator
+  and not duplicated in devkit: `auth=true` without a prerequisite is rejected before anything is created
+  (`devkit new`, exit 2) or changed (`devkit upgrade`, exit 2), and no prerequisite is ever switched on for you.
+  It is independent of `forms`. The registry refuses it up front for template releases before 0.6.0.
+- **Better Auth is the authentication system for both providers**; Supabase Auth is not used (the local
+  Supabase stack keeps its Auth service disabled). The decision and its reasons are in
+  `docs/architecture.md`, and the roadmap no longer plans a separate `auth=supabase-auth`.
+- `devkit upgrade PROJECT --set auth=true` enables authentication on an existing project that has the
+  prerequisites, alone or in the same step that moves it from template 0.5.x to 0.6.x. **`auth` is sticky**:
+  once a project has it, `upgrade --set auth=false` is refused (exit 2, nothing changed), because removing
+  authentication would orphan accounts and data ownership and is not automated. Repeating `auth=true` is fine.
+  The database provider stays locked as before.
+- A sticky option now carries its own explanation (`Option.sticky_reason`), and the comparison with the
+  recorded answer is made on normalised text, so it works for booleans as well as for text options (answers are
+  recorded as `true`/`false` and arrive as typed values).
+- New offline contract snapshot `tests/contracts/web-core/0.6.0.json`, captured from the published template
+  tag `v0.6.0` (all six snapshots verify against their tags).
+- New tests for `auth`: the registry, generation with each provider and with and without Forms, template-owned
+  rejection of each missing prerequisite, release gating, the supported range, upgrades (selections kept, enabled
+  later, invalid input fails safely), the sticky refusal, version reporting, and live-gate tests against the
+  real template. The mini template used by the tests gained a v0.6.x line.
+- Upgrading a Supabase project that has already started its local stack: the CLI creates `supabase/.temp` and
+  `supabase/.branches`, which templates before 0.6.0 did not ignore, and `devkit upgrade` refuses a working tree
+  with untracked files. Add those two paths to the project's `.gitignore` and commit it first; template 0.6.0
+  ignores them for new projects. `docs/usage.md` says so.
+- Version bumped to 0.7.0 (`uv.lock` changed by that one line only).
+
 ## 0.6.0
 
 Adds the Web Core `database` option and widens the supported template range to `>=0.1.0,<0.6.0`

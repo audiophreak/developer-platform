@@ -36,14 +36,14 @@ graph TD
 | `docker-services` (done, part of `database=postgres`) | none | none (shares the base lock) | Docker Compose file | yes |
 | `database` (done: `postgres`, `supabase`) | `zod` | a PostgreSQL client (Supabase client for that provider) | Postgres container; Supabase CLI for that provider | no |
 | `migrations` (done, part of `database`) | `database` | a migration runner (none if the provider's CLI is used) | CI Postgres service | no |
-| `auth` | `database`, `rest_api`, `zod` | the auth library or Supabase auth client | none | no |
+| `auth` (done: Better Auth on either provider) | `database`, `rest_api`, `zod` | `better-auth` | none | no |
 | native iOS | `rest_api`, `auth` (token based) | none (separate template) | Xcode, macOS CI | no |
 
 **Independent today:** `zod`, `docker-services`. **Independent once `zod` exists:** `forms` (done),
-`rest_api`. **A chain:** `docker-services` -> `database` -> `migrations` and `auth`. Rules the
-registry will carry: `database=supabase` provides auth, so `auth=supabase-auth` requires
-`database=supabase`; `deployment=vercel` conflicts with `database=postgres` (a local Postgres is
-unreachable from Vercel). Deployment configuration is deliberately last.
+`rest_api`. **A chain:** `docker-services` -> `database` -> `migrations` and `auth`. There is no
+`auth=supabase-auth`: **Better Auth on PostgreSQL serves both providers** (the decision and its reasons are in
+`architecture.md`). A rule the registry will carry: `deployment=vercel` conflicts with `database=postgres` (a local
+Postgres is unreachable from Vercel). Deployment configuration is deliberately last.
 
 ## Sequence
 
@@ -58,7 +58,7 @@ for every configuration, and keeps the default output unchanged.
 | 4 | `rest_api` v1 (done) | Defines the server boundary the database, auth and iOS all use. | Versioned handlers, problem-details errors, handler tests without a server. |
 | 5 | `docker-services` + `database=postgres` + `migrations` (done) | Local data layer behind the boundary. | Compose file, data-access layer, migrations tested against an ephemeral Postgres in CI. |
 | 6 | `database=supabase` (done) | A provider variant, not a new architecture. | Same data-access interface; local stack documented. |
-| 7 | `auth` and authorization | Needs the data layer and the API. | Deny-by-default tests for every route; sessions covered by integration tests. |
+| 7 | `auth` and authorization (done) | Needs the data layer and the API. | Deny-by-default tests for every route; sessions covered by integration tests, on both providers. |
 | 8 | Native iOS add-on template | Needs a stable API and token auth. | Separate template with its own versions; client generated from the API contract. |
 
 ## Client and server trust boundaries
@@ -72,8 +72,9 @@ for every configuration, and keeps the default output unchanged.
 - **Schemas are shared and secret-free.** `src/lib/schemas` may be imported by client and server; it
   contains shapes and rules, never keys, never connection details.
 - **Authorization is enforced on the server, next to the data**, deny by default, through one
-  central check in the data-access layer, never only in the UI or in middleware. With Supabase,
-  row-level security is a second layer, not a replacement.
+  central check in the data-access layer, never only in the UI or in middleware. Row-level security is a
+  second layer on both providers (a transaction-local user id and a runtime role that cannot bypass it),
+  not a Supabase feature and not a replacement.
 - **Return only what the caller needs.** Responses are built from explicit output schemas, not from
   raw database rows.
 
