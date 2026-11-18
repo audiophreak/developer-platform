@@ -1,0 +1,71 @@
+{
+  "captured_from": "tag v0.5.0",
+  "node_major": 26,
+  "questions": {
+    "app_description": {
+      "default": "A Next.js application",
+      "type": "str"
+    },
+    "app_name": {
+      "type": "str"
+    },
+    "cache_components": {
+      "choices": [
+        false,
+        true
+      ],
+      "default": true,
+      "type": "yaml"
+    },
+    "database": {
+      "choices": [
+        "none",
+        "postgres",
+        "supabase"
+      ],
+      "default": "none",
+      "type": "str"
+    },
+    "forms": {
+      "choices": [
+        false,
+        true
+      ],
+      "default": false,
+      "type": "yaml"
+    },
+    "has_database": {
+      "computed": true,
+      "default": "{{ database != 'none' }}",
+      "type": "yaml"
+    },
+    "has_server": {
+      "computed": true,
+      "default": "{{ rest_api or database != 'none' }}",
+      "type": "yaml"
+    },
+    "lock_key": {
+      "computed": true,
+      "default": "{% set db = ['database-' ~ database] if database != 'none' else [] %}{% set fm = ['forms'] if forms else [] %}{% set zd = ['zod'] if zod else [] %}{% set parts = db + fm + zd %}{{ parts | join('+') if parts else 'base' }}",
+      "type": "str"
+    },
+    "rest_api": {
+      "choices": [
+        false,
+        true
+      ],
+      "default": false,
+      "type": "yaml"
+    },
+    "zod": {
+      "choices": [
+        false,
+        true
+      ],
+      "default": false,
+      "type": "yaml"
+    }
+  },
+  "release": "v0.5.0",
+  "template": "web-core-template"
+}

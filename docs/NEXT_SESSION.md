@@ -4,7 +4,12 @@ Written at the end of the Zod / feature-composition / release-hardening session.
 It contains local paths on purpose (it is a handoff for the owner); generalise or remove them before
 this repository is ever made public. It contains no credentials.
 
-**Status update for the REST API release.** Template `v0.4.0` (optional `rest_api`, requires `zod`) and devkit
+**Status update for the database release.** Template `v0.5.0` (optional choice feature `database`: `postgres` or
+`supabase`, requires `zod`) and devkit `v0.6.0` (`database` option, range `>=0.1.0,<0.6.0`, `0.5.0.json` snapshot from
+the tag, `upgrade` keeps an established provider) are the current releases; see `release-strategy.md` ("The database
+release") and `CHANGELOG.md`.
+
+**Earlier status update (the REST API release).** Template `v0.4.0` (optional `rest_api`, requires `zod`) and devkit
 `v0.5.0` (`rest_api` option, range `>=0.1.0,<0.5.0`, `0.4.0.json` snapshot from the tag) are the current
 releases; see `release-strategy.md` ("The REST API release") and `CHANGELOG.md`.
 

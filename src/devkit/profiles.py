@@ -41,6 +41,8 @@ class Option:
     help: str
     default: bool | str | None = None  # the template's default; a contract test keeps them equal
     since: Version = (0, 1, 0)  # first template release that has this question
+    choices: tuple[str, ...] = ()  # the closed set of values of a text option (the template validates it too)
+    sticky: bool = False  # once set to a value other than the default, `devkit upgrade` will not change it
 
 
 @dataclass(frozen=True)
@@ -70,7 +72,7 @@ PROFILES: dict[str, Profile] = {
             # Assumes the template repository is published under the same GitHub account as
             # the reference application. Confirm or change before the first release.
             url="https://github.com/audiophreak/web-core-template.git",
-            versions=VersionRange((0, 1, 0), (0, 5, 0)),
+            versions=VersionRange((0, 1, 0), (0, 6, 0)),
             node_major=26,
             options=(
                 Option(
@@ -100,6 +102,16 @@ PROFILES: dict[str, Profile] = {
                     "Versioned REST API v1 with RFC 9457 errors (requires zod=true)",
                     default=False,
                     since=(0, 4, 0),
+                ),
+                Option(
+                    "database",
+                    "str",
+                    "Local PostgreSQL with SQL migrations and a server-only data layer: postgres (Docker) or "
+                    "supabase (local Supabase stack); requires zod=true",
+                    default="none",
+                    since=(0, 5, 0),
+                    choices=("none", "postgres", "supabase"),
+                    sticky=True,
                 ),
             ),
         ),

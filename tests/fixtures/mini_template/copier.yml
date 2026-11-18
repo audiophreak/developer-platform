@@ -35,3 +35,10 @@ rest_api:
   default: false
   validator: >-
     {% if rest_api and not zod %}rest_api requires zod: answer zod=true as well (rest_api is never enabled for you).{% endif %}
+
+database:
+  type: str
+  default: none
+  choices: [none, postgres, supabase]
+  validator: >-
+    {% if database != 'none' and not zod %}database requires zod: answer zod=true as well (database is never enabled for you).{% endif %}

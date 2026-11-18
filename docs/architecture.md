@@ -36,15 +36,15 @@ Each available profile carries a `TemplateSpec`:
 | Field        | Meaning                                                                         |
 | ------------ | ------------------------------------------------------------------------------- |
 | `url`        | The published origin. Recorded verbatim in generated projects (portable).       |
-| `versions`   | Half-open range of template releases this devkit supports, e.g. `>=0.1.0,<0.5.0`. |
+| `versions`   | Half-open range of template releases this devkit supports, e.g. `>=0.1.0,<0.6.0`. |
 | `node_major` | Node.js major those releases pin; `doctor` checks it.                           |
-| `options`    | Template questions `--set NAME=VALUE` may set: type, default and `since` (the first release that has it). |
+| `options`    | Template questions `--set NAME=VALUE` may set: type, default, `since` (the first release that has it), optionally a closed set of `choices`, and `sticky` (an option such as the database provider that `upgrade` will not change once it is set). |
 
 The template must accept `app_name` and `app_description` (always sent) and every declared option
 from its `since` release on. A template release that breaks any of this (new Node major, renamed
 question) must bump its minor version, and the platform widens or moves the range in the same
-change. The range may span several template lines: devkit 0.5.0 supports `>=0.1.0,<0.5.0`, and an
-option newer than the selected release (`zod` needs 0.2.0, `forms` 0.3.0, `rest_api` 0.4.0) is refused up front, because Copier
+change. The range may span several template lines: devkit 0.6.0 supports `>=0.1.0,<0.6.0`, and an
+option newer than the selected release (`zod` needs 0.2.0, `forms` 0.3.0, `rest_api` 0.4.0, `database` 0.5.0) is refused up front, because Copier
 silently ignores an answer for a question that does not exist. After a real generation `devkit`
 also verifies each requested option was recorded in the answers file.
 
@@ -139,7 +139,7 @@ that Homebrew cannot pin per project. `doctor` reports mise as optional.
 Reserved profiles are rejected with an explicit message so later milestones do not change the CLI.
 
 **Optional features.** Within a profile, optional features are boolean Copier questions in the
-template (`zod`, `forms` and `rest_api` exist; the rest are planned). How they are represented, enforced, locked,
+template (`zod`, `forms`, `rest_api` and `database` exist; the rest are planned). How they are represented, enforced, locked,
 recorded and upgraded is decided in `feature-composition.md`; the roadmap, dependency relationships
 and trust boundaries for the planned ones are in `full-stack-plan.md`.
 

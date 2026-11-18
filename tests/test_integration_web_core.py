@@ -147,6 +147,35 @@ def test_the_real_template_itself_rejects_rest_api_without_zod(questions: dict, 
     assert not (tmp_path / "api-no-zod").exists()
 
 
+def test_every_registry_choice_is_exactly_the_templates_set_of_choices(questions: dict) -> None:
+    for option in SPEC.options:
+        if option.choices:
+            assert questions[option.name]["choices"] == list(option.choices), option.name
+
+
+@pytest.mark.parametrize("provider", ["postgres", "supabase"])
+def test_local_mode_generates_a_database_application_with_each_provider(questions: dict, tmp_path: Path, provider: str) -> None:
+    project = generate_project(
+        NewRequest(f"{provider}-contract", "Database contract test", tmp_path, template=str(TEMPLATE_DIR), options=("zod=true", f"database={provider}"))
+    ).destination
+    recorded = yaml.safe_load((project / ".copier-answers.yml").read_text())
+    assert (recorded["zod"], recorded["database"]) == (True, provider)
+    for relative in ("supabase/migrations/20260101000000_create_items.sql", "scripts/db/cli.mjs", "src/server/items/repository.ts", "docs/database.md"):
+        assert (project / relative).is_file(), relative
+    assert (project / "compose.yaml").is_file() == (provider == "postgres")
+    assert (project / "supabase/config.toml").is_file() == (provider == "supabase")
+
+
+def test_the_real_template_itself_rejects_a_database_without_zod_and_devkit_adds_no_rule(questions: dict, tmp_path: Path) -> None:
+    with pytest.raises(UsageError, match="database requires zod") as raised:
+        generate_project(NewRequest("db-no-zod", "x", tmp_path, template=str(TEMPLATE_DIR), options=("database=postgres",)))
+    assert raised.value.exit_code == 2
+    assert not (tmp_path / "db-no-zod").exists()
+    with pytest.raises(UsageError, match="must be one of none, postgres, supabase"):  # devkit's own check, before the template is read
+        generate_project(NewRequest("db-bad", "x", tmp_path, template=str(TEMPLATE_DIR), options=("zod=true", "database=oracle")))
+    assert not (tmp_path / "db-bad").exists()
+
+
 # ---------------------------------------------------------------- release gate: snapshots versus the real template
 
 
@@ -229,3 +258,18 @@ def test_the_real_v0_3_0_release_still_generates_and_refuses_rest_api(questions:
     with pytest.raises(UsageError, match="'rest_api' needs template v0.4.0"):
         generate_project(NewRequest("no-api", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.3.0", options=("zod=true", "rest_api=true")))
     assert not (tmp_path / "no-api").exists()
+
+
+def test_the_real_v0_4_0_release_still_generates_and_refuses_a_database(questions: dict, tmp_path: Path) -> None:
+    """Backward compatibility against the real v0.4.0 tag (skipped if the checkout has no such tag)."""
+    if "v0.4.0" not in _tags():
+        pytest.skip("the template checkout has no v0.4.0 tag")
+    result = generate_project(
+        NewRequest("v040-contract", "v0.4.0 contract test", tmp_path, template=str(TEMPLATE_DIR),
+                   template_ref="v0.4.0", options=("zod=true", "forms=true", "rest_api=true"))
+    )  # fmt: skip
+    recorded = yaml.safe_load((result.destination / ".copier-answers.yml").read_text())
+    assert recorded["rest_api"] is True and "database" not in recorded
+    with pytest.raises(UsageError, match="'database' needs template v0.5.0"):
+        generate_project(NewRequest("no-db", "x", tmp_path, template=str(TEMPLATE_DIR), template_ref="v0.4.0", options=("zod=true", "database=postgres")))
+    assert not (tmp_path / "no-db").exists()

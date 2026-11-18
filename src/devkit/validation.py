@@ -55,6 +55,8 @@ def parse_options(spec: TemplateSpec, pairs: Sequence[str]) -> dict[str, object]
             else:
                 raise UsageError(f"Option {name!r} is true/false; got {raw!r}.")
         else:
+            if option.choices and raw not in option.choices:
+                raise UsageError(f"Option {name!r} must be one of {', '.join(option.choices)}; got {raw!r}.")
             answers[name] = raw
     return answers
 

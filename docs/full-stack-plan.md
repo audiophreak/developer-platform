@@ -33,9 +33,9 @@ graph TD
 | `zod` (done) | none | `zod` | none | yes |
 | `forms` (done) | `zod` | React Hook Form, its Zod resolver; dev: DOM test libraries | none | yes |
 | `rest_api` (done) | `zod` | none (Next.js route handlers) | none | yes |
-| `docker-services` | none | none (shares the base lock) | Docker Compose file | yes |
-| `database` | `docker-services`, `zod` | a PostgreSQL client (Supabase client for that provider) | Postgres container; Supabase CLI for that provider | no |
-| `migrations` | `database` | a migration runner (none if the provider's CLI is used) | CI Postgres service | no |
+| `docker-services` (done, part of `database=postgres`) | none | none (shares the base lock) | Docker Compose file | yes |
+| `database` (done: `postgres`, `supabase`) | `zod` | a PostgreSQL client (Supabase client for that provider) | Postgres container; Supabase CLI for that provider | no |
+| `migrations` (done, part of `database`) | `database` | a migration runner (none if the provider's CLI is used) | CI Postgres service | no |
 | `auth` | `database`, `rest_api`, `zod` | the auth library or Supabase auth client | none | no |
 | native iOS | `rest_api`, `auth` (token based) | none (separate template) | Xcode, macOS CI | no |
 
@@ -56,8 +56,8 @@ for every configuration, and keeps the default output unchanged.
 | 2 | `devkit upgrade` and offline contract snapshots (platform) | **Done** in devkit 0.3.0: range enforcement for existing projects before any breaking release, and CI-checkable compatibility before the option list grows. | `release-strategy.md`. |
 | 3 | `forms` (done) | Smallest next feature; client-only; exercises the `requires` rule and a feature with dev dependencies. | Tested form with shared-schema validation; first real rule enforced by a validator. |
 | 4 | `rest_api` v1 (done) | Defines the server boundary the database, auth and iOS all use. | Versioned handlers, problem-details errors, handler tests without a server. |
-| 5 | `docker-services` + `database=postgres` + `migrations` | Local data layer behind the boundary. | Compose file, data-access layer, migrations tested against an ephemeral Postgres in CI. |
-| 6 | `database=supabase` | A provider variant, not a new architecture. | Same data-access interface; local stack documented. |
+| 5 | `docker-services` + `database=postgres` + `migrations` (done) | Local data layer behind the boundary. | Compose file, data-access layer, migrations tested against an ephemeral Postgres in CI. |
+| 6 | `database=supabase` (done) | A provider variant, not a new architecture. | Same data-access interface; local stack documented. |
 | 7 | `auth` and authorization | Needs the data layer and the API. | Deny-by-default tests for every route; sessions covered by integration tests. |
 | 8 | Native iOS add-on template | Needs a stable API and token auth. | Separate template with its own versions; client generated from the API contract. |
 

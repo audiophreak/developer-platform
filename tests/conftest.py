@@ -79,20 +79,29 @@ REST_API_QUESTION = (
     "(rest_api is never enabled for you).{% endif %}\n"
 )
 FLAGS_WITH_REST_API = FLAGS_WITH_FORMS + "rest_api={{ rest_api | lower }}\n"
+DATABASE_QUESTION = (
+    "\ndatabase:\n  type: str\n  default: none\n  choices: [none, postgres, supabase]\n  validator: >-\n"
+    "    {% if database != 'none' and not zod %}database requires zod: answer zod=true as well "
+    "(database is never enabled for you).{% endif %}\n"
+)
+FLAGS_WITH_DATABASE = FLAGS_WITH_REST_API + "database={{ database }}\n"
 FLAGS_WITHOUT_ZOD = "cache_components={{ cache_components | lower }}\n"
 
 
-def make_versioned_template(destination: Path, *, through_forms: bool = False, through_rest_api: bool = False) -> Path:
+def make_versioned_template(
+    destination: Path, *, through_forms: bool = False, through_rest_api: bool = False, through_database: bool = False
+) -> Path:
     """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x has
     `zod`, v0.3.x adds `forms` (which requires zod, enforced by the template's own validator).
 
     v0.4.x adds `rest_api` (which also requires zod). Releases: v0.1.0, v0.1.1, v0.2.0, v0.2.1, with
-    `through_forms` also v0.3.0 and v0.3.1, and with `through_rest_api` also v0.4.0 and v0.4.1. Each
+    `through_forms` also v0.3.0 and v0.3.1, with `through_rest_api` also v0.4.0 and v0.4.1, and with
+    `through_database` also v0.5.0 and v0.5.1 (v0.5.x adds `database`, which also requires zod). Each
     writes its version into version.txt. Without the flags the history stops at the earlier line, so
     tests written for it keep cutting later releases from that state.
     """
     full = (MINI_TEMPLATE / "copier.yml").read_text()
-    assert ZOD_QUESTION in full and FORMS_QUESTION in full and REST_API_QUESTION in full
+    assert ZOD_QUESTION in full and FORMS_QUESTION in full and REST_API_QUESTION in full and DATABASE_QUESTION in full
     destination.mkdir(parents=True)
     shutil.copytree(MINI_TEMPLATE / "template", destination / "template")
 
@@ -100,7 +109,8 @@ def make_versioned_template(destination: Path, *, through_forms: bool = False, t
         (destination / "copier.yml").write_text(copier_yml)
         (destination / "template" / "flags.txt.jinja").write_text(flags)
 
-    without_rest_api = full.replace(REST_API_QUESTION, "")
+    without_database = full.replace(DATABASE_QUESTION, "")
+    without_rest_api = without_database.replace(REST_API_QUESTION, "")
     without_forms = without_rest_api.replace(FORMS_QUESTION, "")
     write(without_forms.replace(ZOD_QUESTION, ""), FLAGS_WITHOUT_ZOD)
     run_git(destination, "init", "-q", "-b", "main")
@@ -111,14 +121,18 @@ def make_versioned_template(destination: Path, *, through_forms: bool = False, t
     write(without_forms, FLAGS_WITH_ZOD)
     release(destination, "v0.2.0")
     release(destination, "v0.2.1")
-    if through_forms or through_rest_api:
+    if through_forms or through_rest_api or through_database:
         write(without_rest_api, FLAGS_WITH_FORMS)
         release(destination, "v0.3.0")
         release(destination, "v0.3.1")
-    if through_rest_api:
-        write(full, FLAGS_WITH_REST_API)
+    if through_rest_api or through_database:
+        write(without_database, FLAGS_WITH_REST_API)
         release(destination, "v0.4.0")
         release(destination, "v0.4.1")
+    if through_database:
+        write(full, FLAGS_WITH_DATABASE)
+        release(destination, "v0.5.0")
+        release(destination, "v0.5.1")
     return destination
 
 

@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="NAME=VALUE",
-        help="set a template option such as zod=true or cache_components=false (repeatable)",
+        help="set a template option such as zod=true, database=postgres or cache_components=false (repeatable)",
     )
     new.add_argument(
         "--template",
@@ -105,7 +105,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="NAME=VALUE",
-        help="change an option or feature while upgrading, e.g. --set zod=true (repeatable)",
+        help="change an option or feature while upgrading, e.g. --set zod=true (repeatable); an established database provider cannot be changed",
     )
     upgrade.add_argument("--profile", default=DEFAULT_PROFILE, choices=sorted(PROFILES), help="profile whose supported range applies")
     upgrade.add_argument("--dry-run", action="store_true", help="show the plan and run Copier's preview; change nothing")

@@ -153,6 +153,16 @@ def plan_upgrade(request: UpgradeRequest) -> UpgradePlan:
             f"The project is at {format_tag(installed)}, newer than this devkit supports ({supported}). Use a newer devkit."
         )
 
+    for option in spec.options:
+        recorded, requested = answers.get(option.name), options.get(option.name)
+        if option.sticky and requested is not None and recorded not in (None, option.default) and str(requested) != recorded:
+            raise UsageError(
+                f"{option.name} is {recorded!r} in this project; changing it to {requested!r} is not an upgrade. "
+                "It swaps the tooling under existing data, and moving data between providers is not automated. "
+                f"Keep {recorded!r}, or generate a new project with {requested!r} and move your data deliberately "
+                "(see the project's docs/database.md)."
+            )
+
     listing = source if not source.startswith("~") else str(Path(source).expanduser())
     available = [v for v in list_release_tags(listing) if supported.contains(v)]
     if wanted is not None:
