@@ -55,13 +55,34 @@ reviewing, and `uv_lock_sha256` with `sha256sum uv.lock` at that commit.
 
 ## Skipped tests
 
-Twenty-six tests in `tests/test_integration_web_core.py` skip in CI, with the reason "no web-core-template
-checkout": they compare the platform with the real private template and are the **local release
-gate** (`uv run pytest -m integration`, run where the template is checked out). They are skipped,
+The tests marked `integration` skip in CI: those in `tests/test_integration_web_core.py` with the reason "no
+web-core-template checkout", those in `tests/test_integration_native_ios.py` with "needs checkouts of
+web-core-template and native-ios-template". At devkit 0.8.x that is 28 tests (26 web, 2 native pair); `uv run pytest
+--collect-only -q -m integration` prints the current number. They compare the platform with the real private
+templates and are the **local release gate** (`uv run pytest -m integration`, run where both templates are checked
+out beside this repository, or at `$WEB_CORE_TEMPLATE` and `$NATIVE_IOS_TEMPLATE`). They are skipped,
 not deleted, because running them in CI would need a credential able to read the private template
-repository, which this project deliberately does not store. Offline contract snapshots cover
+repositories, which this project deliberately does not store. Offline contract snapshots cover
 compatibility in CI (`release-strategy.md`, section 6). The skips are visible in `junit.xml` and the
 summary on every run.
+
+## Negative control: the failure probe
+
+The evidence workflow was proven to report a red run correctly, not only green ones. On 2026-11-17 a probe commit added
+`tests/test_zz_ci_probe.py` with one deliberately failing test (`assert 1 + 1 == 3`) and one deliberately skipped test
+(reason "deliberate probe skip: must appear with this reason in junit.xml"), on a branch `probe/ci-evidence-failure`
+opened as a pull request titled "PROBE (do not merge): deliberate CI failure":
+
+| | |
+|---|---|
+| Probe commit | `8a3b8d1333c389b857c24dea03729589ce62c438` |
+| Pull request | #3, closed without merging |
+| CI run | `44118456812`, conclusion **failure** on both Python versions (3.12 and 3.14), as intended |
+
+It showed that a failing run still uploads its evidence and that the failure and the skip, with its reason, appear in
+`junit.xml` and the job summary. The commit was never merged into `main`. The branch was deleted from GitHub after the
+probe; the commit remains reachable there through the closed pull request (`refs/pull/3/head`), and the local branch ref
+was removed in the 0.8.1/0.7.1 documentation closeout once this record existed.
 
 ## Security
 

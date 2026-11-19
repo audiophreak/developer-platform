@@ -4,12 +4,17 @@ A reusable, configurable AI-assisted development platform. It checks a macOS wor
 generates new applications from independently versioned [Copier](https://copier-org.github.io/copier/)
 templates through a small Python CLI, `devkit`.
 
-It is one of two repositories with separate version lines:
+It is one of three source repositories, each with its own version line:
 
 | Repository                      | Contains                                                              |
 | ------------------------------- | --------------------------------------------------------------------- |
-| `developer-platform` (this one) | the `devkit` CLI, `Brewfile`, `doctor`, profile registry, platform docs |
+| `developer-platform` (this one) | the `devkit` CLI, `Brewfile`, `doctor`, the profile registry (which template releases are supported, and which native and web releases pair), contract snapshots, platform docs |
 | `web-core-template`             | the Web Core Copier template, its validation, tests and upgrade docs   |
+| `native-ios-template`           | the native iOS add-on Copier template, applied to the same project directory as a second layer; owns only `ios/` and `.copier-answers.ios.yml` |
+
+The dependency is one-way: this repository declares the template releases it supports (`src/devkit/profiles.py`); the
+templates know nothing about it. At devkit 0.8.x: web `>=0.1.0,<0.8.0`, native `>=0.1.0,<0.2.0`, and native 0.1.x pairs
+with web `>=0.7.0,<0.8.0`.
 
 **v0.8:** `devkit doctor`, `devkit new` (with `--dry-run`, `--set`, `--template`,
 `--template-ref`, `--native-*`), `devkit upgrade` (`--layer`), `devkit status`, `devkit native add` and three profiles:

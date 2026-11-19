@@ -11,5 +11,8 @@ brew "uv"
 brew "python@3.14"
 brew "fnm"
 
-# Later milestones (Docker-based local services, native iOS):
+# Docker is deliberately not installed by this file, because the web-core profile and projects without a database do
+# not need it. It IS required for local database work (`--set database=postgres` or `supabase`: `npm run db:*` and
+# `npm run test:db`), for the web-core-template `db` tests, and for the native end-to-end scenario (`ios/scripts/e2e.mjs`).
+# `devkit doctor` reports it as optional. Install Docker Desktop (or another Docker runtime) yourself when you need it:
 # cask "docker-desktop"

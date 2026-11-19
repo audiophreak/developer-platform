@@ -182,9 +182,9 @@ uv run devkit upgrade ../my-app --set zod=true   # change an option or feature w
 What it does, and refuses:
 
 - It reads the project's recorded template origin and release (`.copier-answers.yml`) and requires
-  the release to be a plain tag inside the range this devkit supports (`>=0.1.0,<0.7.0` for Web Core
-  at devkit 0.7.0). A project from an older or newer release, or from commits after a release,
-  is refused with an explanation.
+  the release to be a plain tag inside the range this devkit supports (at devkit 0.8.x: `>=0.1.0,<0.8.0`
+  for Web Core and `>=0.1.0,<0.2.0` for the native iOS layer). A project from an older or newer release,
+  or from commits after a release, is refused with an explanation.
 - The project must be the root of a git repository with **nothing uncommitted** (no modified and no
   untracked files). Otherwise it refuses and changes nothing, so your work can never mix with the
   upgrade and is always recoverable.
@@ -200,6 +200,12 @@ What it does, and refuses:
   selection), `npm run check`, then commit. Work on a branch if you want an easy way back.
 - A project generated in local development mode (`--template PATH`) can be upgraded from that
   checkout, with a warning that its origin is not published.
+- **A project with the native iOS layer** (`.copier-answers.ios.yml`) has two layers with their own releases.
+  `devkit upgrade PROJECT` without `--layer` is refused there (exit 2); upgrade one layer at a time with
+  `devkit upgrade PROJECT --layer web` or `--layer native` (each from a clean tree, each reviewed and committed
+  before the next), and use `devkit status PROJECT` to see both layers and what is newer. A step that would leave
+  the pair outside the supported pairing (native 0.1.x with web `>=0.7.0,<0.8.0`) is refused. After a native
+  upgrade the next steps are `sh ios/scripts/check-contract.sh && sh ios/scripts/test.sh`. Details: `native-ios.md`.
 
 Exit codes: `0` upgraded, already current, or previewed; `1` the project or origin cannot be
 upgraded safely (dirty, not a git root, unavailable origin, unreleased version); `2` rejected
@@ -210,8 +216,8 @@ update` still works, but it takes the newest tag whatever this devkit supports; 
 ## Tests
 
 ```bash
-uv run pytest                  # everything here (about 30 s; no network, no credentials)
-uv run pytest -m integration   # the live checks against a web-core-template checkout
+uv run pytest                  # everything here (no network, no credentials)
+uv run pytest -m integration   # the live checks against the web-core-template and native-ios-template checkouts
 ```
 
 Compatibility with every supported template release is tested **offline**:
