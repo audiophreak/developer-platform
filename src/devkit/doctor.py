@@ -190,6 +190,34 @@ def check_optional_tools() -> list[Check]:
     return checks
 
 
+MIN_XCODE_MAJOR = 26  # the native iOS template targets Xcode 26 and iOS 17.0+
+
+
+def check_ios_toolchain() -> list[Check]:
+    """Warnings only: Xcode and an iOS Simulator runtime are needed by the `native-ios` profile, nothing else."""
+    if sys.platform != "darwin":
+        return [Check("xcode", "warn", "skipped: the native iOS layer needs macOS")]
+    if shutil.which("xcodebuild") is None:
+        return [Check("xcode", "warn", f"not found (the native-ios profile needs Xcode {MIN_XCODE_MAJOR}+)")]
+    result = _run(["xcodebuild", "-version"])
+    version = _version(result.stdout) if result is not None and result.returncode == 0 else None
+    if version is None:
+        return [Check("xcode", "warn", "found but `xcodebuild -version` failed (Xcode license or command line tools?)")]
+    checks = [
+        Check(
+            "xcode",
+            "ok" if version[0] >= MIN_XCODE_MAJOR else "warn",
+            f"{_fmt(version)} (the native-ios profile needs {MIN_XCODE_MAJOR}+)",
+        )
+    ]
+    runtimes = _run(["xcrun", "simctl", "list", "runtimes"])
+    has_ios = runtimes is not None and runtimes.returncode == 0 and re.search(r"^iOS \d", runtimes.stdout, re.M) is not None
+    checks.append(
+        Check("ios simulator", "ok" if has_ios else "warn", "an iOS runtime is installed" if has_ios else "no iOS Simulator runtime (Xcode > Settings > Components)")
+    )
+    return checks
+
+
 def check_brewfile(platform_root: Path) -> Check:
     brewfile = platform_root / "Brewfile"
     if sys.platform != "darwin":
@@ -220,6 +248,7 @@ def run_checks(platform_root: Path) -> list[Check]:
     checks.extend(check_gh())
     checks.append(check_git_credentials())
     checks.extend(check_optional_tools())
+    checks.extend(check_ios_toolchain())
     checks.append(check_brewfile(platform_root))
     return checks
 

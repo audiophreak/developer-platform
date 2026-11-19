@@ -71,8 +71,8 @@ def test_new_creates_the_app_and_passes_options(
         (["new", "fine", "--set", "zod=banana"], "true/false"),
         (["new", "fine", "--set", "zod"], "NAME=VALUE"),
         (["new", "fine", "--set", "nonexistent=true"], "Unknown option"),
-        (["new", "fine", "--profile", "full-stack"], "reserved for a later milestone"),
-        (["new", "fine", "--profile", "native-ios"], "reserved for a later milestone"),
+        (["new", "fine", "--profile", "full-stack"], "explicit choice for database"),
+        (["new", "fine", "--profile", "native-ios"], "explicit choice for database"),
     ],
 )
 def test_rejected_input_exits_2_and_writes_nothing(

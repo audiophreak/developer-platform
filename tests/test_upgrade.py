@@ -283,10 +283,13 @@ def test_refuses_an_unavailable_template_source(world) -> None:
     assert_untouched(project, before, commit)
 
 
-def test_a_reserved_profile_is_a_usage_error(world, capsys) -> None:
+def test_a_reserved_profile_is_a_usage_error(world, capsys, monkeypatch) -> None:
+    from devkit import profiles
+
     _, _, out = world
     project = project_at(out, "v0.1.0")
-    assert cli.main(["upgrade", str(project), "--profile", "native-ios"]) == 2
+    monkeypatch.setitem(profiles.PROFILES, "later", profiles.Profile("later", "Later", False, "not yet"))
+    assert cli.main(["upgrade", str(project), "--profile", "later"]) in (2,)
     assert "reserved for a later milestone" in capsys.readouterr().err
 
 
@@ -325,7 +328,7 @@ def test_success_prints_the_next_steps(world, capsys) -> None:
     project = project_at(out, "v0.1.0")
     assert cli.main(["upgrade", str(project)]) == 0
     text = capsys.readouterr().out
-    assert "Upgraded to v0.2.1" in text and "npm ci" in text and "npm run check" in text and "git diff" in text
+    assert "Upgraded the web layer to v0.2.1" in text and "npm ci" in text and "npm run check" in text and "git diff" in text
 
 
 def test_an_unsupported_project_exits_with_the_documented_codes(world, capsys) -> None:

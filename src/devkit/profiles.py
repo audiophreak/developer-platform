@@ -37,7 +37,7 @@ class Option:
     """A template question the CLI may set with `--set NAME=VALUE`."""
 
     name: str
-    kind: Literal["bool", "str"]
+    kind: Literal["bool", "str", "int"]
     help: str
     default: bool | str | None = None  # the template's default; a contract test keeps them equal
     since: Version = (0, 1, 0)  # first template release that has this question
@@ -52,6 +52,7 @@ class TemplateSpec:
     versions: VersionRange  # template releases this devkit supports
     node_major: int  # Node.js major those releases pin (checked by `doctor`)
     options: tuple[Option, ...] = ()
+    answers_file: str = ".copier-answers.yml"  # where Copier records this template's answers in a project
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,12 @@ class Profile:
     available: bool
     summary: str
     template: TemplateSpec | None = None
+    # Options the profile defines rather than the person choosing them. Naming a different value is refused; naming
+    # the same one is allowed. They are part of what the profile IS, not features switched on behind your back.
+    fixed: tuple[tuple[str, object], ...] = ()
+    # Options the person must state because the choice is architectural (never defaulted by the profile).
+    required: tuple[str, ...] = ()
+    native: TemplateSpec | None = None  # a second template applied to the same directory (the native iOS layer)
 
 
 PROFILES: dict[str, Profile] = {
@@ -73,7 +80,7 @@ PROFILES: dict[str, Profile] = {
             # Assumes the template repository is published under the same GitHub account as
             # the reference application. Confirm or change before the first release.
             url="https://github.com/audiophreak/web-core-template.git",
-            versions=VersionRange((0, 1, 0), (0, 7, 0)),
+            versions=VersionRange((0, 1, 0), (0, 8, 0)),
             node_major=26,
             options=(
                 Option(
@@ -134,22 +141,74 @@ PROFILES: dict[str, Profile] = {
                         "follow the manual steps in the project's docs/auth.md."
                     ),
                 ),
+                Option(
+                    "native_client",
+                    "bool",
+                    "Bearer tokens for native clients and a deterministic OpenAPI 3.1 contract of /api/v1 "
+                    "(requires auth=true)",
+                    default=False,
+                    since=(0, 7, 0),
+                    sticky=True,
+                    sticky_reason=(
+                        "Removing native-client support is a code change you make by hand (the bearer plugin and the "
+                        "contract): a native app may depend on it. See the project's docs/native-client.md."
+                    ),
+                ),
             ),
         ),
     ),
-    "full-stack": Profile(
-        "full-stack",
-        "Full-stack Web",
-        False,
-        "Web Core plus data, validation, auth and API features (planned)",
-    ),
-    "native-ios": Profile(
-        "native-ios",
-        "Web + Native iOS",
-        False,
-        "Full-stack Web plus a native iOS client (planned)",
-    ),
 }
+
+_WEB = PROFILES["web-core"].template
+assert _WEB is not None
+
+# The native iOS layer: a second template, applied to the same directory, with its own releases and answers file.
+NATIVE_TEMPLATE = TemplateSpec(
+    url="https://github.com/audiophreak/native-ios-template.git",
+    versions=VersionRange((0, 1, 0), (0, 2, 0)),
+    node_major=0,  # not a Node template
+    answers_file=".copier-answers.ios.yml",
+    options=(
+        Option("app_display_name", "str", "Name shown under the app icon", since=(0, 1, 0)),
+        Option("bundle_identifier", "str", "Bundle identifier (reverse DNS); a placeholder default", since=(0, 1, 0)),
+        Option("debug_api_port", "int", "Port of the local development server the Debug build talks to", default="3000", since=(0, 1, 0)),
+        Option("release_api_host", "str", "Host the Release build talks to over https; a placeholder default", since=(0, 1, 0)),
+    ),
+)
+
+# Which web releases each native release was generated against (its API contract). A pair outside this is refused:
+# the generated client would not match the server. Keyed by the native release's (major, minor).
+NATIVE_REQUIRES_WEB: dict[tuple[int, int], VersionRange] = {
+    (0, 1): VersionRange((0, 7, 0), (0, 8, 0)),
+}
+
+# The established full-stack baseline (every application in this profile has these) and what stays a choice.
+_FULL_STACK_FIXED: tuple[tuple[str, object], ...] = (("zod", True), ("rest_api", True), ("auth", True))
+
+PROFILES["full-stack"] = Profile(
+    "full-stack",
+    "Full-stack Web",
+    True,
+    "Web Core with Zod, the REST API, a PostgreSQL or Supabase database and Better Auth (Forms optional)",
+    _WEB,
+    fixed=_FULL_STACK_FIXED,
+    required=("database",),
+)
+PROFILES["native-ios"] = Profile(
+    "native-ios",
+    "Web + Native iOS",
+    True,
+    "The full-stack web application plus a native SwiftUI iOS app with a generated typed API client",
+    _WEB,
+    fixed=_FULL_STACK_FIXED + (("native_client", True),),
+    required=("database",),
+    native=NATIVE_TEMPLATE,
+)
+
+
+def native_requirement(native_version: Version) -> VersionRange | None:
+    """The web releases a native release works with, or None for a native release this devkit does not know."""
+    return NATIVE_REQUIRES_WEB.get(native_version[:2])
 
 
 class ProfileError(UsageError):

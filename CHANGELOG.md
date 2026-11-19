@@ -2,6 +2,28 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## 0.8.0
+
+The **`full-stack`** and **`native-ios`** profiles, and a second template layer. Additive: `web-core` behaves as before.
+
+- **Profiles.** `full-stack` = Web Core with `zod`, `rest_api` and `auth` on, plus a database that you must choose
+  (`--set database=postgres|supabase`; devkit never picks an architecture). `native-ios` = `full-stack` with `native_client` on
+  plus the native iOS layer. Fixed options may be repeated but never contradicted; Forms stays optional.
+- **Native layer.** `native-ios-template` (new, private repository, own releases) is applied to the same directory with its
+  own answers file `.copier-answers.ios.yml` and owns only `ios/`. `devkit new --profile native-ios` builds both layers in a
+  staging directory and moves it into place only when both succeeded; `--native-template`, `--native-template-ref`,
+  `--native-set` choose and tune the layer. Pairs of releases that do not belong together are refused
+  (`NATIVE_REQUIRES_WEB`).
+- **`devkit native add PROJECT`** adds the layer to a full-stack project (clean git tree, `native_client` already on; nothing of
+  yours changes). **`devkit status PROJECT`** shows both layers and what is newer. **`devkit upgrade --layer web|native`**
+  upgrades one layer at a time, refuses to guess in a two-layer project, reports "not fully upgraded" while the other
+  layer is behind, and refuses a step that would break the pair.
+- Registry: web range `>=0.1.0,<0.8.0`; the `native_client` option (since 0.7.0, sticky); `Option` kind `int`;
+  `TemplateSpec.answers_file`; contract snapshots `web-core/0.7.0.json` and `native-ios/0.1.0.json`
+  (`tools/capture_contract.py --kind`).
+- Tests: `tests/test_native_ios_support.py` (35, offline) and `tests/test_integration_native_ios.py` (the real pair: one API
+  contract in both layers). Docs: `docs/native-ios.md`.
+
 ## 0.7.0
 
 Adds the Web Core `auth` option and widens the supported template range to `>=0.1.0,<0.7.0` (template 0.1.x

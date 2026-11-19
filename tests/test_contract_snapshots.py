@@ -86,3 +86,39 @@ def test_every_question_devkit_does_not_know_is_computed_or_unneeded() -> None:
             if name in known or question.get("computed"):
                 continue
             assert "default" in question, f"{path.name}: question {name!r} has no default and devkit never sets it"
+
+
+# ------------------------------------------------------------------ the native iOS template
+
+NATIVE_CONTRACTS = Path(__file__).resolve().parent / "contracts" / "native-ios"
+NATIVE_SNAPSHOTS = sorted(NATIVE_CONTRACTS.glob("*.json"), key=version_of)
+
+
+def test_native_snapshots_exist_are_named_for_their_release_and_inside_the_supported_range() -> None:
+    from devkit.profiles import NATIVE_TEMPLATE
+
+    assert NATIVE_SNAPSHOTS, "no native contract snapshots (run tools/capture_contract.py --kind native-ios)"
+    assert {version_of(p) for p in NATIVE_SNAPSHOTS} >= {NATIVE_TEMPLATE.versions.minimum}
+    for path in NATIVE_SNAPSHOTS:
+        data = load(path)
+        assert data["release"] == "v" + path.stem and data["template"] == "native-ios-template"
+        assert NATIVE_TEMPLATE.versions.contains(version_of(path))
+
+
+@pytest.mark.parametrize("snapshot", NATIVE_SNAPSHOTS, ids=lambda p: "v" + p.stem)
+def test_the_registry_matches_each_native_release(snapshot: Path) -> None:
+    from devkit.profiles import NATIVE_TEMPLATE, native_requirement
+
+    data = load(snapshot)
+    questions = data["questions"]
+    assert data["answers_file"] == NATIVE_TEMPLATE.answers_file != ".copier-answers.yml"  # a layer never shares Copier's default
+    assert questions["app_name"]["type"] == "str" and "node_major" not in data
+    for option in NATIVE_TEMPLATE.options:
+        assert option.name in questions, option.name
+        assert questions[option.name]["type"] == option.kind, option.name
+        if option.default is not None:
+            assert str(questions[option.name]["default"]) == str(option.default), option.name
+    assert native_requirement(version_of(snapshot)) is not None  # the pair rule exists for this release line
+    for name, question in questions.items():
+        if name != "app_name" and not question.get("computed"):
+            assert "default" in question, f"{name} has no default and devkit never sets it"

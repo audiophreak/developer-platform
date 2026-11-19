@@ -13,6 +13,7 @@ from devkit import profiles
 
 PLATFORM_ROOT = Path(__file__).resolve().parents[1]
 MINI_TEMPLATE = Path(__file__).resolve().parent / "fixtures" / "mini_template"
+MINI_NATIVE = Path(__file__).resolve().parent / "fixtures" / "mini_native"
 HTTPS_ORIGIN = "https://example.invalid/acme/web-core-template.git"
 
 # Hermetic git identity so tests never read (or depend on) the machine's git configuration.
@@ -93,6 +94,12 @@ AUTH_QUESTION = (
     "(auth is never enabled for you).{% endif %}\n"
 )
 FLAGS_WITH_AUTH = FLAGS_WITH_DATABASE + "auth={{ auth | lower }}\n"
+NATIVE_CLIENT_QUESTION = (
+    "\nnative_client:\n  type: bool\n  default: false\n  validator: >-\n"
+    "    {% if native_client and not auth %}native_client requires auth: answer auth=true as well "
+    "(native_client is never enabled for you).{% endif %}\n"
+)
+FLAGS_WITH_NATIVE_CLIENT = FLAGS_WITH_AUTH + "native_client={{ native_client | lower }}\n"
 FLAGS_WITHOUT_ZOD = "cache_components={{ cache_components | lower }}\n"
 
 
@@ -103,6 +110,7 @@ def make_versioned_template(
     through_rest_api: bool = False,
     through_database: bool = False,
     through_auth: bool = False,
+    through_native: bool = False,
 ) -> Path:
     """A mini template whose releases mirror the real one: v0.1.x has no `zod` question, v0.2.x has
     `zod`, v0.3.x adds `forms` (which requires zod, enforced by the template's own validator).
@@ -116,7 +124,7 @@ def make_versioned_template(
     """
     full = (MINI_TEMPLATE / "copier.yml").read_text()
     assert ZOD_QUESTION in full and FORMS_QUESTION in full and REST_API_QUESTION in full and DATABASE_QUESTION in full
-    assert AUTH_QUESTION in full
+    assert AUTH_QUESTION in full and NATIVE_CLIENT_QUESTION in full
     destination.mkdir(parents=True)
     shutil.copytree(MINI_TEMPLATE / "template", destination / "template")
 
@@ -124,7 +132,8 @@ def make_versioned_template(
         (destination / "copier.yml").write_text(copier_yml)
         (destination / "template" / "flags.txt.jinja").write_text(flags)
 
-    without_auth = full.replace(AUTH_QUESTION, "")
+    without_native = full.replace(NATIVE_CLIENT_QUESTION, "")
+    without_auth = without_native.replace(AUTH_QUESTION, "")
     without_database = without_auth.replace(DATABASE_QUESTION, "")
     without_rest_api = without_database.replace(REST_API_QUESTION, "")
     without_forms = without_rest_api.replace(FORMS_QUESTION, "")
@@ -137,22 +146,42 @@ def make_versioned_template(
     write(without_forms, FLAGS_WITH_ZOD)
     release(destination, "v0.2.0")
     release(destination, "v0.2.1")
-    if through_forms or through_rest_api or through_database or through_auth:
+    if through_forms or through_rest_api or through_database or through_auth or through_native:
         write(without_rest_api, FLAGS_WITH_FORMS)
         release(destination, "v0.3.0")
         release(destination, "v0.3.1")
-    if through_rest_api or through_database or through_auth:
+    if through_rest_api or through_database or through_auth or through_native:
         write(without_database, FLAGS_WITH_REST_API)
         release(destination, "v0.4.0")
         release(destination, "v0.4.1")
-    if through_database or through_auth:
+    if through_database or through_auth or through_native:
         write(without_auth, FLAGS_WITH_DATABASE)
         release(destination, "v0.5.0")
         release(destination, "v0.5.1")
-    if through_auth:
-        write(full, FLAGS_WITH_AUTH)
+    if through_auth or through_native:
+        write(without_native, FLAGS_WITH_AUTH)
         release(destination, "v0.6.0")
         release(destination, "v0.6.1")
+    if through_native:
+        write(full, FLAGS_WITH_NATIVE_CLIENT)
+        release(destination, "v0.7.0")
+        release(destination, "v0.7.1")
+    return destination
+
+
+def make_native_repo(destination: Path, releases: tuple[str, ...] = ("v0.1.0", "v0.1.1")) -> Path:
+    """The mini native template as a committed git repo; each release writes its version into ios/version.txt."""
+    destination.mkdir(parents=True)
+    shutil.copy2(MINI_NATIVE / "copier.yml", destination / "copier.yml")
+    shutil.copytree(MINI_NATIVE / "template", destination / "template")
+    run_git(destination, "init", "-q", "-b", "main")
+    run_git(destination, "add", "-A")
+    run_git(destination, "commit", "-q", "-m", "initial")
+    for tag in releases:
+        (destination / "template/ios/version.txt").write_text(tag.lstrip("v") + "\n")
+        run_git(destination, "add", "-A")
+        run_git(destination, "commit", "-q", "-m", f"release {tag}")
+        run_git(destination, "tag", tag)
     return destination
 
 
@@ -210,3 +239,24 @@ def https_origin(monkeypatch: pytest.MonkeyPatch):
 
     yield serve
     stack.close()
+
+
+@pytest.fixture()
+def point_layers_at(monkeypatch: pytest.MonkeyPatch):
+    """Point the web template (all three profiles) and the native template at local origins and ranges."""
+    from devkit import layers, upgrade
+
+    def apply(web_url: str, native_url: str, web_versions=((0, 1, 0), (0, 8, 0)), native_versions=((0, 1, 0), (0, 2, 0))):
+        web = dataclasses.replace(profiles.PROFILES["web-core"].template, url=web_url, versions=profiles.VersionRange(*web_versions))
+        native = dataclasses.replace(profiles.NATIVE_TEMPLATE, url=native_url, versions=profiles.VersionRange(*native_versions))
+        for name in ("web-core", "full-stack", "native-ios"):
+            profile = profiles.PROFILES[name]
+            monkeypatch.setitem(
+                profiles.PROFILES, name, dataclasses.replace(profile, template=web, native=native if profile.native else None)
+            )
+        for module in (profiles, upgrade, layers):
+            monkeypatch.setattr(module, "NATIVE_TEMPLATE", native)
+        monkeypatch.setattr(upgrade, "NATIVE_ANSWERS_FILE", native.answers_file)
+        return web, native
+
+    return apply

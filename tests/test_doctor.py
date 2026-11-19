@@ -95,3 +95,28 @@ def test_git_credential_helper_presence_is_reported_without_leaking_it(
     absent = doctor.check_git_credentials()
     assert absent.status == "warn" and "gh auth setup-git" in absent.detail
     assert doctor.exit_code([present, absent]) == 0  # a missing helper is a warning, not a failure
+
+
+def test_the_ios_toolchain_checks_only_warn_and_never_fail_doctor(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    empty = tmp_path / "empty-bin"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", str(empty))
+    checks = doctor.check_ios_toolchain()
+    assert checks and all(c.status in ("warn", "ok") for c in checks)
+    assert doctor.exit_code(checks) == 0
+
+
+def test_xcode_below_the_minimum_and_a_missing_runtime_are_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+    import subprocess
+
+    monkeypatch.setattr(doctor.sys, "platform", "darwin")
+    monkeypatch.setattr(doctor.shutil, "which", lambda name: "/usr/bin/" + name)
+
+    def fake(command, extra_env=None, timeout=60):
+        text = "Xcode 15.4\nBuild version 15F31d\n" if command[0] == "xcodebuild" else "== Runtimes ==\n"
+        return subprocess.CompletedProcess(command, 0, stdout=text, stderr="")
+
+    monkeypatch.setattr(doctor, "_run", fake)
+    by_name = {c.name: c for c in doctor.check_ios_toolchain()}
+    assert by_name["xcode"].status == "warn" and "26" in by_name["xcode"].detail
+    assert by_name["ios simulator"].status == "warn"

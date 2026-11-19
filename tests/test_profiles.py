@@ -4,16 +4,18 @@ from devkit.errors import UsageError
 from devkit.profiles import DEFAULT_PROFILE, PROFILES, ProfileError, VersionRange, get_profile
 
 
-def test_web_core_is_the_only_available_profile() -> None:
+def test_web_core_is_the_default_and_all_three_profiles_are_available() -> None:
     assert DEFAULT_PROFILE == "web-core"
-    assert [p.id for p in PROFILES.values() if p.available] == ["web-core"]
+    assert [p.id for p in PROFILES.values() if p.available] == ["web-core", "full-stack", "native-ios"]
     assert get_profile("web-core").title == "Web Core"
 
 
-@pytest.mark.parametrize("profile", ["full-stack", "native-ios"])
-def test_reserved_profiles_are_rejected_with_a_clear_message(profile: str) -> None:
+def test_reserved_profiles_are_rejected_with_a_clear_message(monkeypatch) -> None:
+    from devkit.profiles import Profile
+
+    monkeypatch.setitem(PROFILES, "later", Profile("later", "Later", False, "not yet"))
     with pytest.raises(ProfileError, match="reserved for a later milestone"):
-        get_profile(profile)
+        get_profile("later")
 
 
 def test_unknown_profile_is_rejected() -> None:
@@ -29,13 +31,13 @@ def test_web_core_declares_its_template_contract() -> None:
     template = get_profile("web-core").template
     assert template.url.startswith("https://") and template.url.endswith(".git")
     assert template.node_major == 26
-    assert [o.name for o in template.options] == ["cache_components", "zod", "forms", "rest_api", "database", "auth"]
+    assert [o.name for o in template.options] == ["cache_components", "zod", "forms", "rest_api", "database", "auth", "native_client"]
     assert {o.name: o.default for o in template.options} == {
-        "cache_components": True, "zod": False, "forms": False, "rest_api": False, "database": "none", "auth": False,
+        "cache_components": True, "zod": False, "forms": False, "rest_api": False, "database": "none", "auth": False, "native_client": False,
     }  # fmt: skip
-    assert str(template.versions) == ">=0.1.0,<0.7.0"  # 0.1.x to 0.6.x stay supported
+    assert str(template.versions) == ">=0.1.0,<0.8.0"  # 0.1.x to 0.7.x stay supported
     assert {o.name: o.since for o in template.options} == {
-        "cache_components": (0, 1, 0), "zod": (0, 2, 0), "forms": (0, 3, 0), "rest_api": (0, 4, 0), "database": (0, 5, 0), "auth": (0, 6, 0),
+        "cache_components": (0, 1, 0), "zod": (0, 2, 0), "forms": (0, 3, 0), "rest_api": (0, 4, 0), "database": (0, 5, 0), "auth": (0, 6, 0), "native_client": (0, 7, 0),
     }  # fmt: skip
     database = next(o for o in template.options if o.name == "database")
     assert database.kind == "str" and database.choices == ("none", "postgres", "supabase") and database.sticky and "zod" in database.help

@@ -39,7 +39,7 @@ repositories"); `devkit` never handles credentials itself.
 | `--template-ref vX.Y.Z`   | Render a specific release instead of the newest supported one. Releases outside the supported range are refused. |
 | `--template PATH`         | **Development:** render a local template checkout as it is on disk (working tree included). See below. |
 | `--template URL`          | Use a different template origin, with the same release rules.        |
-| `--profile web-core`      | The only available profile. `full-stack` and `native-ios` are reserved and rejected. |
+| `--profile web-core`      | The default. `full-stack` and `native-ios` are available too; see `native-ios.md`. |
 | `--dry-run`               | Prints what would be created and writes nothing.                     |
 
 Exit codes: `0` success, `1` generation or a check failed (destination exists, template

@@ -52,23 +52,23 @@ def test_auth_is_a_boolean_that_defaults_to_off_and_starts_at_template_0_6_0() -
 def test_the_registry_after_auth_keeps_every_earlier_option_exactly() -> None:
     assert [(o.name, o.since, o.default) for o in SPEC.options] == [
         ("cache_components", (0, 1, 0), True), ("zod", (0, 2, 0), False), ("forms", (0, 3, 0), False),
-        ("rest_api", (0, 4, 0), False), ("database", (0, 5, 0), "none"), ("auth", (0, 6, 0), False),
+        ("rest_api", (0, 4, 0), False), ("database", (0, 5, 0), "none"), ("auth", (0, 6, 0), False), ("native_client", (0, 7, 0), False),
     ]  # fmt: skip
 
 
-def test_the_range_is_0_1_0_up_to_but_excluding_0_7_0() -> None:
-    assert str(SPEC.versions) == ">=0.1.0,<0.7.0"
+def test_the_range_is_0_1_0_up_to_but_excluding_0_8_0() -> None:
+    assert str(SPEC.versions) == ">=0.1.0,<0.8.0"
     assert SPEC.versions.contains((0, 1, 0)) and SPEC.versions.contains((0, 6, 99))
-    assert not SPEC.versions.contains((0, 0, 9)) and not SPEC.versions.contains((0, 7, 0))
+    assert not SPEC.versions.contains((0, 0, 9)) and not SPEC.versions.contains((0, 8, 0))
 
 
 def test_the_version_is_reported_consistently_and_matches_the_package_metadata(capsys) -> None:
     pyproject = tomllib.loads((PLATFORM_ROOT / "pyproject.toml").read_text())
-    assert devkit.__version__ == pyproject["project"]["version"] == "0.7.0"
+    assert devkit.__version__ == pyproject["project"]["version"] == "0.8.0"
     with pytest.raises(SystemExit) as exited:
         cli.main(["--version"])
     assert exited.value.code == 0
-    assert capsys.readouterr().out.strip() == "devkit 0.7.0"
+    assert capsys.readouterr().out.strip() == "devkit 0.8.0"
 
 
 @pytest.mark.parametrize(("raw", "value"), [("true", True), ("false", False), ("yes", True), ("no", False), ("on", True), ("off", False), ("1", True), ("0", False)])
@@ -317,8 +317,8 @@ def test_the_database_provider_stays_locked_while_auth_is_on_and_other_options_c
     assert (recorded["forms"], recorded["cache_components"], recorded["database"], recorded["auth"]) == (True, False, "postgres", True)
 
 
-def test_only_the_database_provider_and_auth_are_locked() -> None:
-    assert [o.name for o in SPEC.options if o.sticky] == ["database", "auth"]
+def test_only_the_database_provider_auth_and_native_client_are_locked() -> None:
+    assert [o.name for o in SPEC.options if o.sticky] == ["database", "auth", "native_client"]
     assert "docs/database.md" in next(o for o in SPEC.options if o.name == "database").sticky_reason
 
 
