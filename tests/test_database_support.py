@@ -88,7 +88,7 @@ def test_database_is_a_closed_choice_that_defaults_to_none_and_starts_at_templat
     assert OPTION.choices == ("none", "postgres", "supabase") and OPTION.default in OPTION.choices
     assert OPTION.sticky is True and "zod" in OPTION.help  # the prerequisite is described, never encoded as a rule
     assert not hasattr(OPTION, "requires")
-    assert [o.name for o in SPEC.options if o.sticky] == ["database", "auth"]  # nothing else is locked once chosen
+    assert [o.name for o in SPEC.options if o.sticky] == ["database", "auth", "native_client"]  # nothing else is locked once chosen
 
 
 def test_every_release_through_0_5_x_stays_supported() -> None:  # the exact range is pinned in test_auth_support.py

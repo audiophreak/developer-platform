@@ -54,6 +54,10 @@ def parse_options(spec: TemplateSpec, pairs: Sequence[str]) -> dict[str, object]
                 answers[name] = False
             else:
                 raise UsageError(f"Option {name!r} is true/false; got {raw!r}.")
+        elif option.kind == "int":
+            if not raw.isdigit() or len(raw) > 6:
+                raise UsageError(f"Option {name!r} is a whole number; got {raw!r}.")
+            answers[name] = int(raw)
         else:
             if option.choices and raw not in option.choices:
                 raise UsageError(f"Option {name!r} must be one of {', '.join(option.choices)}; got {raw!r}.")

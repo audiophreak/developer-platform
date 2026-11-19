@@ -133,8 +133,8 @@ that Homebrew cannot pin per project. `doctor` reports mise as optional.
 | Profile      | Contents                                                                | Status   |
 | ------------ | ----------------------------------------------------------------------- | -------- |
 | `web-core`   | Next.js 16, React 19, strict TS, Tailwind v4, shadcn/ui, ESLint, Prettier, Vitest, CI, AI instructions | **Available** (`web-core-template`) |
-| `full-stack` | Web Core plus a server layer: services, data access, validation, optional database, auth, REST API | Reserved |
-| `native-ios` | Full-stack plus a native iOS (SwiftUI) client, OpenAPI contract, macOS CI job | Reserved |
+| `full-stack` | Web Core with Zod, REST API, a PostgreSQL or Supabase database (chosen explicitly) and Better Auth; Forms optional | Available (devkit 0.8.0) |
+| `native-ios` | Full-stack plus the native iOS layer: a second template (`native-ios-template`) applied to the same directory, with its own answers file and releases | Available (devkit 0.8.0) |
 
 Reserved profiles are rejected with an explicit message so later milestones do not change the CLI.
 

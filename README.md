@@ -11,8 +11,10 @@ It is one of two repositories with separate version lines:
 | `developer-platform` (this one) | the `devkit` CLI, `Brewfile`, `doctor`, profile registry, platform docs |
 | `web-core-template`             | the Web Core Copier template, its validation, tests and upgrade docs   |
 
-**v0.7:** `devkit doctor`, `devkit new` (with `--dry-run`, `--set`, `--template`,
-`--template-ref`), `devkit upgrade` and one profile, `web-core`. Full-stack and native iOS profiles are reserved.
+**v0.8:** `devkit doctor`, `devkit new` (with `--dry-run`, `--set`, `--template`,
+`--template-ref`, `--native-*`), `devkit upgrade` (`--layer`), `devkit status`, `devkit native add` and three profiles:
+`web-core`, `full-stack` (web + Zod + REST API + auth + a database you choose) and `native-ios` (full-stack plus a native
+SwiftUI app, a generated typed API client and Keychain storage). See [docs/native-ios.md](docs/native-ios.md).
 By default `devkit new` builds from the published (private) template at the newest release this
 devkit supports, using git credentials you have configured, and records that repository's URL; `--template PATH` renders a local checkout for template
 development. Web Core options: `cache_components`, `zod`, and `forms` (React Hook Form), `rest_api` (REST API v1) and `database`

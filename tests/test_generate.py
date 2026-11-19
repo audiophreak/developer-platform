@@ -282,10 +282,13 @@ def test_unsafe_names_are_rejected_before_touching_the_filesystem(published, nam
     assert _entries(out) == [] and not (out.parent / "escape").exists()
 
 
-def test_reserved_profiles_are_rejected_before_touching_the_filesystem(published) -> None:
+def test_reserved_profiles_are_rejected_before_touching_the_filesystem(published, monkeypatch) -> None:
+    from devkit import profiles
+
     _, _, _, out = published
+    monkeypatch.setitem(profiles.PROFILES, "later", profiles.Profile("later", "Later", False, "not yet"))
     with pytest.raises(UsageError, match="reserved for a later milestone"):
-        generate_project(NewRequest("app", output_dir=out, profile="native-ios"))
+        generate_project(NewRequest("app", output_dir=out, profile="later"))
     assert _entries(out) == []
 
 

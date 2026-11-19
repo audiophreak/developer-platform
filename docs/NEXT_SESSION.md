@@ -169,3 +169,9 @@ helper's temp-directory handling, `os.mkfifo`, git defaults); fix forward on the
 After the release: `devkit` increment 4 in `docs/full-stack-plan.md`, the `forms` feature, the first with
 a real prerequisite (`requires: [zod]`) and with development dependencies, which will exercise the
 lockfile matrix and the first real rule between features.
+
+## Work Package 4 (devkit 0.8.0): native iOS
+
+Done: web `v0.7.0`, native `v0.1.0`, devkit `v0.8.0` (`full-stack`, `native-ios`, `native add`, `status`, `upgrade --layer`). The real
+end-to-end scenario (`ios/scripts/e2e.mjs`) is a **local release gate** (it needs Docker, Node and a simulator); CI on the native
+repository runs everything else on a macOS runner. Next: deployment is deliberately not part of the platform.

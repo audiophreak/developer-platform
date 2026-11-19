@@ -1,0 +1,31 @@
+# A tiny stand-in for native-ios-template: its own answers file, and only ios/ in the output.
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.ios.yml
+
+app_name:
+  type: str
+  validator: >-
+    {% if not (app_name | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Use lowercase letters, digits and hyphens.
+    {% endif %}
+
+app_display_name:
+  type: str
+  default: "{{ app_name | replace('-', ' ') | title }}"
+
+bundle_identifier:
+  type: str
+  default: "com.example.{{ app_name | replace('-', '') }}"
+  validator: >-
+    {% if not (bundle_identifier | regex_search('^[A-Za-z][A-Za-z0-9]*([.][A-Za-z][A-Za-z0-9-]*)+$')) %}
+    Use a reverse-DNS identifier.
+    {% endif %}
+
+debug_api_port:
+  type: int
+  default: 3000
+
+release_api_host:
+  type: str
+  default: api.example.com

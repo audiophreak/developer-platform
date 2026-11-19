@@ -43,6 +43,19 @@ devkit 0.5.0 supports template 0.1.x to 0.4.x. The `rest_api requires zod` rule 
 as a usage error. The option name is a plain identifier like the others, so no parser changes were
 needed. devkit 0.4.0 keeps working with templates up to 0.3.x and never selects 0.4.0.
 
+### The native iOS release (web template `v0.7.0`, native template `v0.1.0`, devkit `v0.8.0`)
+
+| Repository | Before | After | What changes |
+|---|---|---|---|
+| `web-core-template` | `v0.6.1` | **`v0.7.0`** | optional `native_client` (bearer tokens, deterministic OpenAPI 3.1 contract); no dependency added; off = byte-identical to 0.6.1 |
+| `native-ios-template` (new, private) | none | **`v0.1.0`** | `ios/` only, own answers file, generated Swift client from the web 0.7.0 contract |
+| `developer-platform` | `v0.7.0` | **`v0.8.0`** | `full-stack` and `native-ios` profiles, `native add`, `status`, `upgrade --layer`; web range `>=0.1.0,<0.8.0`, native range `>=0.1.0,<0.2.0` |
+
+Order: the web template first (it owns the contract), then the native template against the **published** web contract (its
+checksum is recorded in `tools/web_contract.json`), then devkit with both snapshots captured from tags
+(`tools/capture_contract.py`, `--kind native-ios`). The pair rule (`NATIVE_REQUIRES_WEB`) means a new web minor needs a new native
+release before devkit will upgrade the web layer of a native project. See `native-ios.md`.
+
 ### The authentication release (template `v0.6.0`, devkit `v0.7.0`)
 
 | Repository | Previous release | This release | Reason |
