@@ -64,11 +64,11 @@ def test_the_range_is_0_1_0_up_to_but_excluding_0_8_0() -> None:
 
 def test_the_version_is_reported_consistently_and_matches_the_package_metadata(capsys) -> None:
     pyproject = tomllib.loads((PLATFORM_ROOT / "pyproject.toml").read_text())
-    assert devkit.__version__ == pyproject["project"]["version"] == "0.8.0"
+    assert devkit.__version__ == pyproject["project"]["version"] == "0.8.1"
     with pytest.raises(SystemExit) as exited:
         cli.main(["--version"])
     assert exited.value.code == 0
-    assert capsys.readouterr().out.strip() == "devkit 0.8.0"
+    assert capsys.readouterr().out.strip() == "devkit 0.8.1"
 
 
 @pytest.mark.parametrize(("raw", "value"), [("true", True), ("false", False), ("yes", True), ("no", False), ("on", True), ("off", False), ("1", True), ("0", False)])

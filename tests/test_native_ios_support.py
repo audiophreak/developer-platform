@@ -86,9 +86,9 @@ def test_a_native_release_names_the_web_releases_it_was_generated_against() -> N
     assert native_requirement((0, 1, 5)) is NATIVE_REQUIRES_WEB[(0, 1)] and native_requirement((0, 9, 0)) is None
 
 
-def test_version_numbers_agree_and_this_is_devkit_0_8_0() -> None:
-    assert devkit.__version__ == "0.8.0"
-    assert tomllib.loads((PLATFORM_ROOT / "pyproject.toml").read_text())["project"]["version"] == "0.8.0"
+def test_version_numbers_agree_and_this_is_devkit_0_8_1() -> None:
+    assert devkit.__version__ == "0.8.1"
+    assert tomllib.loads((PLATFORM_ROOT / "pyproject.toml").read_text())["project"]["version"] == "0.8.1"
 
 
 def test_profile_options_are_fixed_or_required_never_silently_chosen() -> None:

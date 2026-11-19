@@ -2,6 +2,25 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## 0.8.1
+
+Documentation-only patch. No change to the CLI, profiles, supported ranges (web `>=0.1.0,<0.8.0`, native
+`>=0.1.0,<0.2.0`, native 0.1.x with web `>=0.7.0,<0.8.0`), contract snapshots or behaviour; the only non-documentation
+change is the version number (`pyproject.toml`, `src/devkit/__init__.py`, the version line of `uv.lock`, and the three
+test assertions that pin it).
+
+- `README.md`: this is one of **three** source repositories (with `web-core-template` and `native-ios-template`), not
+  two; the one-way dependency and the 0.8.x ranges are stated.
+- `docs/usage.md`: the upgrade range is `>=0.1.0,<0.8.0` for Web Core and `>=0.1.0,<0.2.0` for the native layer (it
+  still said `<0.7.0` at devkit 0.7.0); the two-layer upgrade rules (`--layer`, `devkit status`, the pairing) are
+  described; the integration tests use both template checkouts.
+- `docs/ci-evidence.md`: the integration tests skipped in CI are 28 at 0.8.x (26 web, 2 native pair), not 26, with
+  both skip reasons and the command that prints the current number; the negative-control CI probe (commit `8a3b8d1`,
+  closed pull request #3) is recorded.
+- `Brewfile`: the stale "Later milestones" comment now says when Docker is required (local database work, the
+  template's `db` tests, the native end-to-end scenario) and that it stays optional otherwise. Nothing is added to the
+  file and `devkit doctor` is unchanged.
+
 ## 0.8.0
 
 The **`full-stack`** and **`native-ios`** profiles, and a second template layer. Additive: `web-core` behaves as before.
