@@ -26,6 +26,27 @@ versions. Generated applications carry their own `AGENTS.md` from their template
 - Work is not done until `uv run pytest` passes. Report actual results, including failures.
 - Update `README.md`, `CHANGELOG.md` and `docs/` when behaviour changes.
 
+## Local-first development and hosted CI cost control
+
+- Prefer local implementation, debugging and test iteration on the approved development workstation.
+  Use the owner's designated primary coding agent; avoid duplicating work across paid platforms.
+- Run applicable project quality gates, integration tests, builds and disposable rehearsals locally.
+  Keep meaningful local commits when authorized. Batch remote pushes at locally validated major
+  milestones and final reviewable candidates, not every intermediate correction.
+- Preserve existing approvals for commits, pushes, releases and deployment. Keep unpushed work
+  protected by approved local backup mechanisms; never commit private data or credentials.
+- Reserve hosted CI for milestone validation, required target-platform testing and the exact final
+  release candidate. Use remote diagnostics when local reproduction is unavailable and justified.
+  Investigate failures locally before rerunning hosted jobs.
+- Optimize redundant workflow triggers, superseded PR runs and safe caching without weakening
+  required checks or exact-commit evidence. Skipped or unavailable required checks are not passes.
+  If hosted quota runs out, continue local development but block releases until required CI passes.
+- Do not provision paid infrastructure, change spending limits, install persistent self-hosted
+  runners on a personal workstation or production system, or bypass required quality gates without
+  explicit approval.
+- Minimize manual operator actions. Lead reports with required owner actions (or none), then the
+  bottom line, verified results and material blockers.
+
 ## Boundary with templates
 
 - The dependency is one-way: this repository declares which template releases it supports
