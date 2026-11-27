@@ -20,8 +20,8 @@ with web `>=0.7.0,<0.8.0`.
 `--template-ref`, `--native-*`), `devkit upgrade` (`--layer`), `devkit status`, `devkit native add` and three profiles:
 `web-core`, `full-stack` (web + Zod + REST API + auth + a database you choose) and `native-ios` (full-stack plus a native
 SwiftUI app, a generated typed API client and Keychain storage). See [docs/native-ios.md](docs/native-ios.md).
-By default `devkit new` builds from the published (private) template at the newest release this
-devkit supports, using git credentials you have configured, and records that repository's URL; `--template PATH` renders a local checkout for template
+By default `devkit new` builds from the published template at the newest release this
+devkit supports (using your configured git credentials if the template repository is private), and records that repository's URL; `--template PATH` renders a local checkout for template
 development. Web Core options: `cache_components`, `zod`, and `forms` (React Hook Form), `rest_api` (REST API v1) and `database`
 (`none`, `postgres` or `supabase`), which require `zod`, and `auth` (Better Auth, which requires `zod`, `rest_api` and a `database`).
 
@@ -76,3 +76,9 @@ CHANGELOG.md          release notes for devkit
 - [Release preparation](docs/milestone-release-preparation.md), the
   [v0.2 milestone report](docs/milestone-v0.2-repository-split.md) and the
   [v0.1 report](docs/milestone-web-core-v0.1.md) (historical).
+
+## Contributing, security and licence
+
+- [Contributing](CONTRIBUTING.md): development setup, ground rules and pull requests.
+- [Security policy](SECURITY.md): supported versions and how to report a vulnerability privately.
+- Licensed under the [MIT License](LICENSE).

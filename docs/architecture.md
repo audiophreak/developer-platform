@@ -184,8 +184,8 @@ docs:
   tests scan every generated file). GitHub Actions use read-only permissions,
   `persist-credentials: false` and full-commit-SHA pins.
 - Messages redact URL credentials. `devkit` never reads, stores or passes credentials: git runs with
-  prompting disabled and uses whatever credential helper is configured. The template and the
-  platform repositories are private; see `publishing.md` for access and its limitations.
+  prompting disabled and uses whatever credential helper is configured. Access to a private
+  template repository is described in `publishing.md`, with its limitations.
 
 ## Corrections to earlier assumptions
 
@@ -204,8 +204,8 @@ docs:
 
 ## Open decisions
 
-1. Published as two **private** repositories (`publishing.md`); revisit visibility if others need to
-   use the platform.
+1. First published as two **private** repositories (`publishing.md`); visibility is revisited at the
+   public release.
 2. How profiles compose across templates (layering or one template).
 3. Whether to teach `devkit upgrade` to apply a chain of releases (today it goes to one target).
 

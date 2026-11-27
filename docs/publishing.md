@@ -1,12 +1,12 @@
 # Publishing and releases
 
 Releases: **`web-core-template` v0.1.0** and **`developer-platform` v0.2.0** (the platform
-supports template releases `>=0.1.0,<0.2.0`). **Both repositories are private.** The template is
+supports template releases `>=0.1.0,<0.2.0`). Both repositories were private at that release. The template is
 published first, because the platform's default mode builds from the published template.
 
 > This document describes the **first** release (it includes creating the repositories). For later
 > releases follow `release-strategy.md`, section 7, and the template's `docs/maintaining.md`; the
-> private-repository access notes below still apply.
+> access notes below apply whenever a template repository is private.
 
 Each repository is published the same way, and a tag is only created after CI is green on the
 pushed commit, so a tag never points at an unverified commit. Replace `/path/to/...` with your
@@ -14,8 +14,9 @@ checkouts.
 
 ## Private repositories
 
-Because the template repository is private, everything that reads it needs git credentials that
-work without a prompt: `devkit new`, `copier update`, `copier copy`, and anyone else generating or
+A public template repository can be read without credentials. When a template repository is private
+(for example a private fork, or the original repositories before their public release), everything
+that reads it needs git credentials that work without a prompt: `devkit new`, `copier update`, `copier copy`, and anyone else generating or
 upgrading a project.
 
 **How `devkit` authenticates.** It does not handle credentials at all. It runs `git` with prompting
@@ -52,11 +53,12 @@ printing it.
 - Every person or machine that generates or upgrades a project needs a GitHub account with read
   access to the template and one of the setups above. Without it `devkit new` fails with
   "Template source is unavailable" and explains why.
-- Generated projects record the private template URL in `.copier-answers.yml`, so `copier update`
+- Generated projects record the template URL in `.copier-answers.yml`, so `copier update`
   has the same requirement. Their own CI does not need the template; only a CI job that runs
   `copier update` would (it would need a token with read access to the template, not set up).
-- On GitHub's Free plan, branch protection rules and some other features are not available for
-  private repositories, and private repositories use the plan's Actions minutes allowance.
+- Depending on the GitHub plan, branch protection, secret scanning and some other features are not
+  available for private repositories, and private repositories use the plan's Actions minutes
+  allowance.
 - Switching a repository to public later changes nothing in the recorded URLs. Switching back to
   private does not retract anything already copied.
 
@@ -127,8 +129,8 @@ Remove the temporary directory (`$CHECK`) yourself when finished.
 
 ## 4. After publishing
 
-- Branch protection for `main` (require the `CI` checks) needs a paid GitHub plan for private
-  repositories; no protection or other repository settings were created.
+- At the first release no branch protection or other repository settings were created. The
+  repositories now use rulesets and GitHub security features; see `SECURITY.md`.
 - Optional follow-up: a platform CI job that checks out the template (needs a read token) and runs
   the contract tests (`WEB_CORE_TEMPLATE=<path>`); today the platform's CI skips them because only
   one repository is checked out.

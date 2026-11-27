@@ -1,8 +1,8 @@
 # Next session handoff
 
-Written at the end of the Zod / feature-composition / release-hardening session. Read this first.
-It contains local paths on purpose (it is a handoff for the owner); generalise or remove them before
-this repository is ever made public. It contains no credentials.
+Written at the end of the Zod / feature-composition / release-hardening session and kept as the record of
+that checkpoint. Read this first when resuming maintenance. Paths are relative to a directory that holds
+the repositories side by side (for example `~/Developer`). It contains no credentials or personal data.
 
 **Status update for the authentication release.** Template `v0.6.0` (optional `auth`: Better Auth on either database
 provider, a least-privilege runtime role, owner-scoped data, a protected `/api/v1` API; requires `zod`, `rest_api` and a
@@ -35,9 +35,9 @@ the current state is in the repositories' tags and `CHANGELOG.md`.
 
 | What | Location | Notes |
 | ---- | -------- | ----- |
-| Platform (CLI, tools, docs) | `~/Developer/developer-platform` | private: `github.com/audiophreak/developer-platform` |
-| Web Core template | `~/Developer/web-core-template` | private: `github.com/audiophreak/web-core-template` |
-| Reference application | `~/Developer/my-first-app` | **read-only**; `main` at `bf3643c`, clean; never modify |
+| Platform (CLI, tools, docs) | `developer-platform/` | `github.com/audiophreak/developer-platform` |
+| Web Core template | `web-core-template/` | `github.com/audiophreak/web-core-template` |
+| Reference application | a separate application repository | **read-only** input the template was first derived from; never modified |
 
 Architecture in one paragraph: two repositories with separate version lines. `devkit` (this
 repository) generates and upgrades projects from a profile's template and enforces which template
@@ -114,7 +114,8 @@ lint and shadcn tooling; production audits are clean.
 3. Layering add-on templates (for native iOS) is a hypothesis with no prototype.
 4. The lockfile matrix is capped at 16 by a test; beyond that, curated presets.
 5. Whether to pin `ubuntu-latest` in both CI workflows (GitHub announced a label migration).
-6. Branch protection on both repositories: not created; may need a paid plan for private repositories.
+6. Branch protection on both repositories: not created at this checkpoint (it has since been configured
+   with repository rulesets; see `SECURITY.md`).
 
 ## 7. Outstanding release prerequisites
 
@@ -144,17 +145,17 @@ Never move or delete a published tag; fix forward. Mechanics and commands: `docs
 ## 9. Commands to resume
 
 ```bash
-cd ~/Developer/developer-platform && git status && git log --oneline -3
+cd developer-platform && git status && git log --oneline -3
 gh pr checks 1                                       # platform draft PR
 gh pr checks 1 --repo audiophreak/web-core-template  # template draft PR
 uv sync --locked && uv run --locked pytest           # platform tests
-cd ~/Developer/web-core-template && uv sync --locked && uv run --locked pytest
+cd ../web-core-template && uv sync --locked && uv run --locked pytest
 uv run python tools/compare_release.py v0.1.0        # default output unchanged?
 uv run python tools/refresh_locks.py --check         # feature lockfiles reproducible?
 ```
 
-Git authentication already works through the machine's credential helper (no credentials are stored in
-either repository). To rehearse a published flow without publishing, serve the real registry URL from a
+Git authentication, where a repository needs it, goes through the machine's credential helper (no
+credentials are stored in either repository). To rehearse a published flow without publishing, serve the real registry URL from a
 scratch repository with git's URL rewriting (see the rehearsal described in
 `docs/milestone-release-hardening.md`, section 8). For scratch space use `uv run python tools/scratch.py
 new` and `clean`; never delete by hand.
