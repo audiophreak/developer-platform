@@ -2,6 +2,17 @@
 
 devkit versions are git tags (`vMAJOR.MINOR.PATCH`), independent of template versions.
 
+## Unreleased
+
+Repository and documentation changes for public distribution. No change to the CLI, profiles, supported ranges,
+contract snapshots or behaviour.
+
+- Added `LICENSE` (MIT), `SECURITY.md` (private vulnerability reporting, security posture) and `CONTRIBUTING.md`.
+- `docs/NEXT_SESSION.md`: the handoff uses repository-relative paths, no longer names the private reference
+  application or its commit, and drops the "generalise before public" note.
+- `README.md`, `docs/usage.md`, `docs/publishing.md`, `docs/architecture.md`, `docs/ci-evidence.md`: credential
+  guidance now applies "if the template repository is private" instead of stating that the repositories are private.
+
 ## 0.8.1
 
 Documentation-only patch. No change to the CLI, profiles, supported ranges (web `>=0.1.0,<0.8.0`, native

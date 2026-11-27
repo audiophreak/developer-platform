@@ -26,8 +26,8 @@ uv run devkit new my-app --description "What it does" --output-dir ..
 This builds from the profile's **published** template at the newest release this devkit supports
 (see `src/devkit/profiles.py`), and records that repository's URL and the release tag in the
 project's `.copier-answers.yml`. It needs network access and fails with a clear message if the
-template repository is not reachable or has no supported release. The template repository is
-**private**, so git must be able to authenticate without prompting (`publishing.md`, "Private
+template repository is not reachable or has no supported release. If the template repository is
+private, git must be able to authenticate without prompting (`publishing.md`, "Private
 repositories"); `devkit` never handles credentials itself.
 
 | Option                    | Meaning                                                              |
